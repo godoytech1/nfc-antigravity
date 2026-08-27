@@ -1,52 +1,52 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { supabase, CHANNEL_NAME } from '../services/realtime';
 import type { BroadcastMessage } from '../types';
 
-// En producción, seteá VITE_SERVER_URL en Vercel con la URL pública del backend (Render).
-// En desarrollo local, si no está seteada, cae en localhost:3000.
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000';
+type SocketEvent = 'asistencia:nueva' | 'justificativo:nuevo' | 'justificativo:estado';
+
+const EVENT_TO_MESSAGE_TYPE: Record<SocketEvent, BroadcastMessage['type']> = {
+  'asistencia:nueva': 'NFC_SCAN',
+  'justificativo:nuevo': 'JUSTIFICATION_SUBMIT',
+  'justificativo:estado': 'JUSTIFICATION_UPDATE',
+};
+
+const MESSAGE_TYPE_TO_EVENT: Record<BroadcastMessage['type'], SocketEvent> = {
+  NFC_SCAN: 'asistencia:nueva',
+  JUSTIFICATION_SUBMIT: 'justificativo:nuevo',
+  JUSTIFICATION_UPDATE: 'justificativo:estado',
+};
 
 export function useAttendanceSync(onMessageReceived?: (msg: BroadcastMessage) => void) {
-  const socketRef = useRef<Socket | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
-    socketRef.current = io(SERVER_URL, { transports: ['websocket'] });
-
-    socketRef.current.on('connect', () => {
-      console.log('Web Dashboard conectado a Socket.io:', socketRef.current?.id);
-    });
+    const channel = supabase.channel(CHANNEL_NAME);
+    channelRef.current = channel;
 
     if (onMessageReceived) {
-      socketRef.current.on('asistencia:nueva', (data) => {
-        onMessageReceived({ type: 'NFC_SCAN', payload: data });
-      });
-
-      socketRef.current.on('justificativo:nuevo', (data) => {
-        onMessageReceived({ type: 'JUSTIFICATION_SUBMIT', payload: data });
-      });
-
-      socketRef.current.on('justificativo:estado', (data) => {
-        onMessageReceived({ type: 'JUSTIFICATION_UPDATE', payload: data });
+      (Object.keys(EVENT_TO_MESSAGE_TYPE) as SocketEvent[]).forEach((event) => {
+        channel.on('broadcast', { event }, ({ payload }) => {
+          onMessageReceived({ type: EVENT_TO_MESSAGE_TYPE[event], payload } as BroadcastMessage);
+        });
       });
     }
 
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('Web Dashboard conectado a Supabase Realtime');
       }
+    });
+
+    return () => {
+      supabase.removeChannel(channel);
+      channelRef.current = null;
     };
   }, [onMessageReceived]);
 
   const broadcast = useCallback((message: BroadcastMessage) => {
-    if (!socketRef.current) return;
-    
-    if (message.type === 'NFC_SCAN') {
-      socketRef.current.emit('asistencia:nueva', message.payload);
-    } else if (message.type === 'JUSTIFICATION_SUBMIT') {
-      socketRef.current.emit('justificativo:nuevo', message.payload);
-    } else if (message.type === 'JUSTIFICATION_UPDATE') {
-      socketRef.current.emit('justificativo:estado', message.payload);
-    }
+    const channel = channelRef.current;
+    if (!channel) return;
+    channel.send({ type: 'broadcast', event: MESSAGE_TYPE_TO_EVENT[message.type], payload: message.payload });
   }, []);
 
   return { broadcast };

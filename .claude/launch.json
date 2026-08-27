@@ -7,6 +7,13 @@
       "runtimeArgs": ["expo", "start", "--web"],
       "port": 8081,
       "cwd": "mobile"
+    },
+    {
+      "name": "web-dashboard",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--port", "5173"],
+      "port": 5173,
+      "cwd": "web"
     }
   ]
 }
