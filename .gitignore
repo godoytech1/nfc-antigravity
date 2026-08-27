@@ -10,6 +10,7 @@ build/
 web-build/
 .expo/
 .expo-shared/
+.vercel/
 
 # Env files
 .env
