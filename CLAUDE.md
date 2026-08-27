@@ -7,37 +7,41 @@
 Es una plataforma educativa moderna (versión 2.0) diseñada para registrar la asistencia de los alumnos a sus aulas mediante tarjetas NFC simuladas por un teléfono celular, así como para gestionar la justificación de inasistencias médicas. Todo el sistema funciona en **tiempo real (Real-time)**.
 
 
-## Arquitectura y Tecnologías
-El ecosistema está modularizado en 3 carpetas principales ubicadas en la raíz del proyecto:
+## Arquitectura y Tecnologías (actualizado agosto 2026)
+El ecosistema está modularizado en 3 carpetas principales ubicadas en la raíz del proyecto. **Desde agosto 2026 el tiempo real ya NO pasa por un servidor propio**: se reemplazó Socket.io por **Supabase Realtime** (canal `attendance`, eventos `asistencia:nueva` / `justificativo:nuevo` / `justificativo:estado`), así que no hace falta levantar nada para que web y mobile se hablen — solo necesitan internet.
 
-1. **`server/` (Backend en Tiempo Real)**
+1. **`server/` (Backend legado, ya NO se usa en producción)**
    - **Tecnologías:** Node.js, Express, `socket.io`.
-   - **Propósito:** Actúa como el cerebro central. Mantiene conexiones WebSocket con los clientes web y móviles para transmitir eventos (`asistencia:nueva`, `justificativo:nuevo`, `justificativo:estado`) en tiempo real. 
-   - **Ejecución:** `node index.js` (puerto por defecto: 3000).
+   - **Estado:** Se mantiene en el repo como referencia histórica, pero el panel web y la app móvil ya no se conectan a él. Si algún día se necesita volver a un servidor propio, está la lógica de referencia acá.
 
-2. **`web/` (Panel de Control de Profesores)**
-   - **Tecnologías:** React, Vite, TypeScript, TailwindCSS, `react-router-dom`, `lucide-react`, `socket.io-client`.
+2. **`web/` (Panel de Control de Profesores) — publicado en Vercel**
+   - **Tecnologías:** React, Vite, TypeScript, TailwindCSS, `react-router-dom`, `lucide-react`, `@supabase/supabase-js`.
    - **Propósito:** Una SPA donde el profesor ("profe@cnsil.edu.py") monitorea en vivo las llegadas de los alumnos al aula y gestiona los justificativos pendientes (aprobando o denegando).
-   - **Ejecución:** `npm run dev` (puerto por defecto: 5173).
+   - **Tiempo real:** `src/services/realtime.ts` + `src/hooks/useAttendanceSync.ts`.
+   - **Producción:** https://web-psi-green-v54f2g8w11.vercel.app (auto-deploy en cada push a `master` vía GitHub → Vercel).
+   - **Desarrollo local:** `npm run dev` (puerto por defecto: 5173) — no necesita `server/` corriendo.
 
 3. **`mobile/` (App Móvil - Terminal de Entrada y Perfil del Alumno)**
-   - **Tecnologías:** React Native (Expo), TypeScript, `lucide-react-native`, `socket.io-client`.
-   - **Propósito:** 
-     - **Modo Profesor:** Sirve como un "terminal inteligente" en la puerta del aula. Tiene un botón para "Simular Escaneo NFC" que emite eventos de llegada inmediatos hacia el servidor.
-     - **Modo Alumno:** Permite enviar justificativos médicos que aparecen instantáneamente en la pantalla de la cátedra del profesor.
-   - **Conexión:** La IP local del PC (por ejemplo `http://192.168.100.15:3000`) se configura en `src/services/socket.ts`.
-   - **Ejecución:** `npx expo start`.
+   - **Tecnologías:** React Native (Expo), TypeScript, `lucide-react-native`, `@supabase/supabase-js`.
+   - **Propósito:**
+     - **Modo Profesor:** "terminal inteligente" en la puerta del aula (botón "Simular Escaneo NFC"), además de **Mis Clases** (lista de cursos → roster de alumnos con estado presente/ausente).
+     - **Modo Alumno:** enviar justificativos médicos, ver **Historial** de llegadas y **Ajustes** (perfil + preferencias).
+   - **Conexión:** ya NO depende de la IP local de ninguna PC — habla directo con Supabase desde cualquier red. Configuración en `src/services/realtime.ts`.
+   - **Ejecución:** `npx expo start` (no requiere levantar `server/` ni `web/`).
+   - Repo git propio (nested), separado del repo principal — no tocar con `git add -A` en la raíz sin revisar antes.
+
+## Cuentas / infraestructura usadas
+- **GitHub:** `godoytech1/nfc-antigravity` (público, sin secretos — la Supabase anon key es pública por diseño).
+- **Vercel:** proyecto `web`, team `godoytech1s-projects`, deploy automático desde GitHub.
+- **Supabase:** proyecto `nfc-antigravity` (plan Free, sin tarjeta) — solo se usa Realtime (Broadcast), no hay tablas ni Auth configurados. Se pausa solo tras 1 semana sin uso (se reactiva con un clic desde el dashboard).
 
 ## Últimos Cambios Realizados (Historial Reciente)
-Para que sepas en qué estado quedó el código antes de tu llegada, estos fueron los ajustes recientes:
-- **Limpieza profunda:** Se eliminaron archivos de plantilla inútiles (`App.css`, `mock.ts`, imágenes por defecto de Vite) y archivos gigantes de depuración (`expo_time.json`, `rn_time.json`) manteniendo el espacio de trabajo prístino.
-- **Identidad Gráfica Institucional:** Se reemplazó el icono de escudo genérico por el ícono de **Colegio (`School` de lucide-react)**, unificando el diseño de la pantalla de Login Web con la app móvil.
-- **Mejoras UX/UI y Traducciones:** 
-  - Se corrigió el botón "Salir" del `TeacherPanel.tsx` inyectándole navegación funcional hacia la ruta `/dashboard`.
-  - Se tradujo toda la app móvil al español ("Control de Asistencia NFC", "Simular Escaneo NFC").
-- **Control de Versiones:** El proyecto `mobile` ya fue commiteado en Git dejando el *working tree* limpio. 
+- **Migración de arquitectura:** Socket.io (servidor propio) → Supabase Realtime, para poder publicar todo gratis y 24/7 sin depender de ninguna computadora encendida.
+- **Nuevas pantallas mobile:** Historial y Ajustes (Alumno), Mis Clases + roster por curso (Profesor) — implementadas a partir de bocetos a mano que mandó Araceli por WhatsApp.
+- **Identidad Gráfica Institucional:** ícono de Colegio (`School` de lucide-react) unificado entre Login Web y app móvil.
+- **Despliegue:** `web/` publicado en Vercel; `mobile/` sigue usándose vía Expo Go pero ya sin restricción de red local.
 
 ## Guía para Continuar Trabajando
-- Respeta la arquitectura de WebSockets para cualquier nueva característica que implique comunicación celular <-> PC.
-- Para probar el proyecto debes iniciar siempre los tres servicios en 3 terminales separadas (`server`, `web`, `mobile`).
-- ¡El proyecto tiene potencial para escalar! Sigue ayudando al usuario (Dylan) manteniendo respuestas amables, claras y concisas en español.
+- El tiempo real vive en `web/src/services/realtime.ts` y `mobile/src/services/realtime.ts` (Supabase Broadcast) — cualquier evento nuevo debe registrarse en la constante `EVENTS`/`EVENT_TO_MESSAGE_TYPE` de ambos lados.
+- No revivir `server/` salvo que se decida explícitamente volver a un servidor propio.
+- Sigue ayudando al usuario (Dylan) manteniendo respuestas amables, claras y concisas en español.

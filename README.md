@@ -1,59 +1,50 @@
-# C.N.S.I.L. NFC Attendance System (Rediseño Arquitectónico)
+# C.N.S.I.L. NFC Attendance System
 
-Este repositorio contiene el sistema de asistencia dividido en tres módulos principales para permitir la conexión en tiempo real a través de una red local, permitiendo utilizar un dispositivo móvil físico con Expo Go.
+Sistema de asistencia con tecnología NFC, en tiempo real y publicado 24/7 — sin depender de que ninguna computadora esté prendida.
 
-## Requisitos Previos
-- Node.js instalado.
-- La aplicación **Expo Go** instalada en tu teléfono móvil (iOS o Android).
-- Tu computadora y tu teléfono deben estar conectados a la **misma red Wi-Fi**.
+## Arquitectura (desde agosto 2026)
 
----
+| Parte | Dónde vive | Tecnología |
+|---|---|---|
+| Panel del profesor | **Vercel** (público, 24/7) | React + Vite |
+| Tiempo real (asistencias, justificativos) | **Supabase Realtime** (gratis, sin tarjeta) | `@supabase/supabase-js` |
+| App del celular | Expo Go (tu teléfono) | React Native |
+| `server/` | Ya no se usa en producción — queda como referencia histórica | Node + Socket.io |
 
-## 1. Configuración de Red (IP Local)
+Ya **no hace falta** levantar ningún servidor propio, ni que el celular esté en la misma red Wi-Fi que una PC: todo pasa por Supabase, así que funciona desde cualquier lugar con internet.
 
-Para que el celular físico pueda enviar los eventos NFC al Dashboard Web, necesita saber la dirección IP de tu computadora.
+## Panel del profesor (ya publicado)
 
-1. Abre tu terminal y descubre tu IP local (en Windows ejecuta `ipconfig` y busca la "Dirección IPv4" de tu adaptador Wi-Fi, por ejemplo: `192.168.1.52`).
-2. Ve al archivo `mobile/src/services/socket.ts`.
-3. Reemplaza el valor de `SERVER_URL` con tu IP local:
-   ```typescript
-   export const SERVER_URL = 'http://192.168.1.52:3000'; // Usa tu IP real
-   ```
+👉 **https://web-psi-green-v54f2g8w11.vercel.app**
 
----
+Cada vez que se sube un cambio a la rama `master` en GitHub, Vercel lo vuelve a publicar solo.
 
-## 2. Cómo ejecutar el proyecto completo
+## Cómo correr la app del celular
 
-Necesitarás abrir **3 terminales** distintas en la carpeta raíz del proyecto (`NFC Antigravity`).
+Solo necesitás **una terminal**:
 
-### Terminal 1: Servidor Backend (Socket.io)
-Este servidor triangula los mensajes entre el celular y la web.
-```bash
-cd server
-npm start # O simplemente: node index.js
-```
-*Deberías ver: "Servidor de Socket.io ejecutándose en http://0.0.0.0:3000"*
-
-### Terminal 2: Dashboard Web (React + Vite)
-El panel administrativo del profesor.
-```bash
-cd web
-npm run dev
-```
-*Abre http://localhost:5173 en tu navegador.*
-
-### Terminal 3: Aplicación Móvil (Expo React Native)
 ```bash
 cd mobile
 npx expo start
 ```
-1. Aparecerá un código QR grande en la terminal.
-2. Abre la app **Expo Go** en tu celular y escanea el QR.
-3. La aplicación móvil se abrirá en tu teléfono físico.
 
----
+1. Aparece un código QR.
+2. Abrí **Expo Go** en tu celular y escaneá el QR (¡ya no hace falta estar en la misma red que ninguna PC!).
+3. Iniciá sesión escribiendo `profe` (modo profesor) o `alumno` (modo alumno) en el correo.
 
-## 3. Flujo de Prueba Real
-- En tu PC: Observa el Dashboard Web (`localhost:5173`) esperando llegadas.
-- En tu Celular: Inicia sesión como `profe` y toca el botón "Simular Lector (Tocar)".
-- **¡Magia!** La llegada registrada en tu teléfono aparecerá instantáneamente en la pantalla de tu computadora a través de la red local.
+## Flujo de prueba
+
+- Abrí el panel del profesor (el link de arriba) en una compu o en el celular.
+- En la app del celular, entrá como `profe` y tocá **"Simular Escaneo NFC"**.
+- La llegada aparece al instante en el panel — sin importar en qué red esté cada uno.
+
+## Desarrollo local (opcional)
+
+Si querés tocar el código del panel web y verlo antes de publicar:
+
+```bash
+cd web
+npm run dev
+```
+
+Abre `http://localhost:5173`. No hace falta levantar `server/` — el hook `useAttendanceSync` ya habla directo con Supabase.

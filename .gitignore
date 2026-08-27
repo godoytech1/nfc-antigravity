@@ -1,3 +1,6 @@
+# mobile/ es su propio repo git (historial separado) — no lo trackeamos acá
+/mobile/
+
 # Dependencies
 node_modules/
 
