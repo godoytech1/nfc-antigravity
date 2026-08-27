@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+web-build/
+.expo/
+.expo-shared/
+
+# Env files
+.env
+.env.local
+.env*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor/OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Expo / native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision

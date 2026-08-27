@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: nfc-antigravity-server
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    autoDeploy: true
