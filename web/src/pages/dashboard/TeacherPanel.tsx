@@ -12,6 +12,8 @@ export default function TeacherPanel() {
 
   const { broadcast } = useAttendanceSync((msg: BroadcastMessage) => {
     if (msg.type === 'NFC_SCAN') {
+      // Esta lista es solo de alumnos: el profesor escanea, no se registra a sí mismo.
+      if (msg.payload.role !== 'alumno') return;
       setScans((prev) => [msg.payload, ...prev]);
     } else if (msg.type === 'JUSTIFICATION_SUBMIT') {
       setJustifications((prev) => [msg.payload, ...prev]);

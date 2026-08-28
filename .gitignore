@@ -1,5 +1,7 @@
 # mobile/ es su propio repo git (historial separado) — no lo trackeamos acá
 /mobile/
+# mobile-apk/ es una carpeta de prueba local (build APK con EAS) — no forma parte del deploy
+/mobile-apk/
 
 # Dependencies
 node_modules/
