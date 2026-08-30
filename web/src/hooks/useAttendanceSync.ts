@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { supabase, CHANNEL_NAME } from '../services/realtime';
+import { supabase, CHANNEL_NAME, REALTIME_CHANNEL_CONFIG } from '../services/realtime';
 import type { BroadcastMessage } from '../types';
 
 type SocketEvent = 'asistencia:nueva' | 'justificativo:nuevo' | 'justificativo:estado';
@@ -20,7 +20,7 @@ export function useAttendanceSync(onMessageReceived?: (msg: BroadcastMessage) =>
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
-    const channel = supabase.channel(CHANNEL_NAME);
+    const channel = supabase.channel(CHANNEL_NAME, REALTIME_CHANNEL_CONFIG);
     channelRef.current = channel;
 
     if (onMessageReceived) {

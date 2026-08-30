@@ -19,3 +19,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 export const CHANNEL_NAME = 'attendance';
+
+// broadcast.self:true por si algún día se abre el panel y se escanea desde el mismo
+// dispositivo — sin esto, Supabase no reenvía tu propio mensaje a vos mismo.
+export const REALTIME_CHANNEL_CONFIG = { config: { broadcast: { self: true as const } } };

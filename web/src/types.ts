@@ -14,8 +14,8 @@ export interface AttendanceRecord {
   userId: string;
   userName: string;
   role: Role;
+  course: string; // ej: "3er BTI" — a qué clase pertenece el alumno
   subject: string;
-  specialty: string;
   timestamp: string; // ISO String or formatted time
 }
 

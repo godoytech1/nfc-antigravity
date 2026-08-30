@@ -74,7 +74,7 @@ export default function TeacherPanel() {
                       </div>
                       <div>
                         <p className="font-bold text-gray-900">{scan.userName}</p>
-                        <p className="text-sm text-gray-500">{scan.role === 'profesor' ? 'Profesor' : 'Alumno'} • {scan.subject} {scan.specialty ? `(${scan.specialty})` : ''}</p>
+                        <p className="text-sm text-gray-500">{scan.course} · {scan.subject}</p>
                       </div>
                     </div>
                     <div className="bg-green-50 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200">
