@@ -1,15 +1,45 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { School } from 'lucide-react';
+import { signIn, signOut, getMyProfile, translateAuthError } from '../../services/auth';
+import { supabase } from '../../services/realtime';
 
 export default function DashboardLogin() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('profe@cnsil.edu.py');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Si ya había una sesión de profesor guardada, entrar directo.
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+      const profile = await getMyProfile();
+      if (profile?.role === 'profesor') {
+        navigate('/dashboard/profesor', { replace: true });
+      }
+    });
+  }, [navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/dashboard/profesor');
+    setError(null);
+    setLoading(true);
+    try {
+      await signIn(email, password);
+      const profile = await getMyProfile();
+      if (profile?.role !== 'profesor') {
+        await signOut();
+        setError('Esta cuenta no es de profesor. Este panel es solo para profesores.');
+        return;
+      }
+      navigate('/dashboard/profesor', { replace: true });
+    } catch (err: any) {
+      setError(translateAuthError(err?.message ?? 'No se pudo iniciar sesión.'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -20,7 +50,8 @@ export default function DashboardLogin() {
             <School size={36} className="text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 text-center">C.N.S.I.L.</h1>
-          <p className="text-gray-500 mt-1">Sistema Administrativo NFC</p>
+          <p className="text-gray-500 mt-1">Panel de Profesores</p>
+          <p className="text-gray-400 text-xs mt-1">Usá la misma cuenta que en la app</p>
         </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-5">
@@ -46,11 +77,14 @@ export default function DashboardLogin() {
             />
           </div>
 
+          {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md transition-all mt-4 active:scale-95"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold py-3.5 rounded-xl shadow-md transition-all mt-4 active:scale-95 cursor-pointer"
           >
-            Acceder al Panel
+            {loading ? 'Ingresando...' : 'Acceder al Panel'}
           </button>
         </form>
       </div>

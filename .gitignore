@@ -23,6 +23,9 @@ web-build/
 *.log
 npm-debug.log*
 
+# Supabase CLI (se usó una vez para consultar la versión, no hace falta)
+/supabase/.temp/
+
 # Editor/OS
 .DS_Store
 Thumbs.db
