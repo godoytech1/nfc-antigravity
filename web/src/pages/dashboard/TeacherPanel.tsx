@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Zap, FileText, CheckCircle2, XCircle, Lock, Trash2, Users, Clock } from 'lucide-react';
+import { LogOut, Zap, FileText, CheckCircle2, XCircle, Settings, Users, Clock } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAttendance, todayISO } from '../../hooks/useAttendance';
 import { useJustifications } from '../../hooks/useJustifications';
 import { useStudents } from '../../hooks/useStudents';
 import { signOut } from '../../services/auth';
-import ChangePasswordModal from '../../components/ChangePasswordModal';
+import SettingsModal from '../../components/SettingsModal';
 import type { Justification } from '../../types';
 
 // "2026-09-13" -> "sáb, 13 sept." sin corrimiento de zona horaria
@@ -32,8 +32,7 @@ export default function TeacherPanel() {
 
   const [selectedJustification, setSelectedJustification] = useState<Justification | null>(null);
   const [historyStudent, setHistoryStudent] = useState<{ id: string; name: string } | null>(null);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [clearing, setClearing] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Guardia de acceso: sin sesión, o sesión de alumno -> afuera.
   if (!loading && (!profile || profile.role !== 'profesor')) {
@@ -57,16 +56,10 @@ export default function TeacherPanel() {
   };
 
   const handleClearData = async () => {
-    if (!confirm('Esto borra TODAS las asistencias y justificativos guardados (de todos los alumnos). Las cuentas no se tocan. ¿Confirmás?')) {
-      return;
-    }
-    setClearing(true);
     try {
       await Promise.all([clearAttendance(), clearJustifications()]);
     } catch (e: any) {
       alert(e?.message ?? 'No se pudo limpiar los datos.');
-    } finally {
-      setClearing(false);
     }
   };
 
@@ -82,19 +75,11 @@ export default function TeacherPanel() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowPasswordModal(true)}
+            onClick={() => setShowSettings(true)}
             className="flex items-center gap-2 text-blue-200 hover:text-white transition-colors bg-white/10 px-4 py-2 rounded-lg cursor-pointer"
           >
-            <Lock size={16} />
-            <span>Contraseña</span>
-          </button>
-          <button
-            onClick={handleClearData}
-            disabled={clearing}
-            className="flex items-center gap-2 text-red-200 hover:text-white transition-colors bg-red-500/20 px-4 py-2 rounded-lg cursor-pointer disabled:opacity-60"
-          >
-            <Trash2 size={16} />
-            <span>{clearing ? 'Borrando...' : 'Limpiar datos de prueba'}</span>
+            <Settings size={18} />
+            <span>Configuración</span>
           </button>
           <button
             onClick={handleLogout}
@@ -364,7 +349,14 @@ export default function TeacherPanel() {
         </div>
       )}
 
-      <ChangePasswordModal open={showPasswordModal} email={email} onClose={() => setShowPasswordModal(false)} />
+      <SettingsModal
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        nombre={profile?.fullName ?? ''}
+        email={email}
+        onLogout={handleLogout}
+        onClearData={handleClearData}
+      />
     </div>
   );
 }

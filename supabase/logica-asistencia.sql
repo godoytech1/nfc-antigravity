@@ -142,6 +142,14 @@ grant select on public.dias_de_clase to authenticated;
 alter table public.justificativos
   add column if not exists fecha date not null default current_date;
 
+-- Sin "on delete cascade", borrar una cuenta desde Authentication -> Users
+-- falla si esa persona dejó algún justificativo. profiles y asistencias ya
+-- lo tenían; esto empareja justificativos.
+alter table public.justificativos drop constraint if exists justificativos_user_id_fkey;
+alter table public.justificativos
+  add constraint justificativos_user_id_fkey
+  foreign key (user_id) references auth.users(id) on delete cascade;
+
 create index if not exists justificativos_por_usuario
   on public.justificativos (user_id, created_at desc);
 
