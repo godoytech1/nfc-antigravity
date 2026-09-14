@@ -8,6 +8,7 @@ type Row = {
   student_name: string;
   course: string;
   reason: string;
+  fecha: string;
   status: 'pending' | 'approved' | 'denied';
   created_at: string;
 };
@@ -19,6 +20,7 @@ function fromRow(r: Row): Justification {
     studentName: r.student_name,
     course: r.course,
     reason: r.reason,
+    fecha: r.fecha,
     status: r.status,
     createdAt: r.created_at,
   };

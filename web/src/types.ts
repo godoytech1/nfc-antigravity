@@ -1,12 +1,14 @@
 export type Role = 'profesor' | 'alumno';
 
+export type AttendanceStatus = 'ontime' | 'late' | 'absent';
+
 export interface AttendanceRecord {
   id: string;
   studentId: string | null;
   studentName: string;
   course: string;
-  subject: string | null;
-  status: 'ontime' | 'absent';
+  status: AttendanceStatus;
+  fecha: string; // YYYY-MM-DD, día de clase según la zona horaria del colegio
   scannedAt: string; // ISO
 }
 
@@ -16,6 +18,7 @@ export interface Justification {
   studentName: string;
   course: string;
   reason: string;
+  fecha: string; // YYYY-MM-DD: el día que se está justificando
   status: 'pending' | 'approved' | 'denied';
   createdAt: string; // ISO
 }

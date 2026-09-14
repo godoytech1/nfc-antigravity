@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../services/realtime';
-import type { AttendanceRecord } from '../types';
+import type { AttendanceRecord, AttendanceStatus } from '../types';
 
 type Row = {
   id: string;
   student_id: string | null;
   student_name: string;
   course: string;
-  subject: string | null;
-  status: 'ontime' | 'absent';
+  status: AttendanceStatus;
+  fecha: string;
   scanned_at: string;
 };
 
@@ -18,14 +18,28 @@ function fromRow(r: Row): AttendanceRecord {
     studentId: r.student_id,
     studentName: r.student_name,
     course: r.course,
-    subject: r.subject,
     status: r.status,
+    fecha: r.fecha,
     scannedAt: r.scanned_at,
   };
 }
 
-// Misma tabla que usa la app (public.asistencias): acá se ve en vivo lo que
-// va escaneando el profesor desde el celular, y sobrevive a un F5.
+// Acotamos el historial que se trae: antes se pedían todas las filas de
+// siempre, sin límite.
+const DIAS_DE_HISTORIAL = 60;
+
+export function todayISO() {
+  return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+}
+
+function desdeISO(dias: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - dias);
+  return d.toLocaleDateString('en-CA');
+}
+
+// Misma tabla que usa la app (public.asistencias). El estado puntual/tarde
+// lo calcula un trigger en la base, no el cliente.
 export function useAttendance() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
 
@@ -35,6 +49,7 @@ export function useAttendance() {
     supabase
       .from('asistencias')
       .select('*')
+      .gte('fecha', desdeISO(DIAS_DE_HISTORIAL))
       .order('scanned_at', { ascending: false })
       .then(({ data, error }) => {
         if (error) {

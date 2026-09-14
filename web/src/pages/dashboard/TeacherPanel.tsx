@@ -2,17 +2,25 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Zap, FileText, CheckCircle2, XCircle, Lock, Trash2, Users, Clock } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { useAttendance } from '../../hooks/useAttendance';
+import { useAttendance, todayISO } from '../../hooks/useAttendance';
 import { useJustifications } from '../../hooks/useJustifications';
 import { useStudents } from '../../hooks/useStudents';
 import { signOut } from '../../services/auth';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
 import type { Justification } from '../../types';
 
-function isToday(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+// "2026-09-13" -> "sáb, 13 sept." sin corrimiento de zona horaria
+function fechaLarga(fecha: string) {
+  const [y, m, d] = fecha.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('es-PY', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+  });
+}
+
+function hora(iso: string) {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function TeacherPanel() {
@@ -36,7 +44,9 @@ export default function TeacherPanel() {
     return <div className="min-h-screen flex items-center justify-center text-gray-400">Cargando...</div>;
   }
 
-  const todayScans = records.filter((r) => isToday(r.scannedAt));
+  const hoy = todayISO();
+  const todayScans = records.filter((r) => r.fecha === hoy);
+  const tardeHoy = todayScans.filter((r) => r.status === 'late').length;
   const pending = justifications.filter((j) => j.status === 'pending');
   const resolved = justifications.filter((j) => j.status !== 'pending');
   const historyRecords = historyStudent ? records.filter((r) => r.studentId === historyStudent.id) : [];
@@ -104,7 +114,10 @@ export default function TeacherPanel() {
             <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
               Llegadas Registradas Hoy <Zap size={20} className="text-yellow-500 fill-yellow-500" />
             </h2>
-            <p className="text-sm text-gray-400 mt-1">Tocá un alumno para ver su historial completo.</p>
+            <p className="text-sm text-gray-400 mt-1">
+              {todayScans.length} {todayScans.length === 1 ? 'llegada' : 'llegadas'}
+              {tardeHoy > 0 ? ` · ${tardeHoy} con retraso` : ''} · tocá un alumno para ver su historial.
+            </p>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6">
@@ -132,8 +145,15 @@ export default function TeacherPanel() {
                         <p className="text-sm text-gray-500">{scan.course}</p>
                       </div>
                     </div>
-                    <div className="bg-green-50 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200">
-                      {new Date(scan.scannedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <div
+                      className={
+                        scan.status === 'late'
+                          ? 'bg-amber-50 text-amber-700 px-4 py-1.5 rounded-full text-sm font-bold border border-amber-200'
+                          : 'bg-green-50 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200'
+                      }
+                    >
+                      {scan.status === 'late' ? 'Tarde · ' : ''}
+                      {hora(scan.scannedAt)}
                     </div>
                   </button>
                 ))}
@@ -161,6 +181,9 @@ export default function TeacherPanel() {
                     <h3 className="font-bold text-gray-900">
                       {justification.studentName} ({justification.course})
                     </h3>
+                    <p className="text-xs text-blue-600 font-semibold mt-0.5">
+                      Falta del {fechaLarga(justification.fecha)}
+                    </p>
                     <p className="text-sm text-gray-500 mt-1 line-clamp-2">{justification.reason}</p>
 
                     <div className="mt-4 flex gap-2">
@@ -261,6 +284,10 @@ export default function TeacherPanel() {
                   {selectedJustification.studentName} ({selectedJustification.course})
                 </p>
               </div>
+              <div className="mb-6">
+                <label className="text-sm font-bold text-gray-500 uppercase">Día que justifica</label>
+                <p className="text-lg font-semibold">{fechaLarga(selectedJustification.fecha)}</p>
+              </div>
               <div>
                 <label className="text-sm font-bold text-gray-500 uppercase">Motivo</label>
                 <p className="text-gray-800 p-4 bg-gray-50 rounded-xl mt-1 border border-gray-100">{selectedJustification.reason}</p>
@@ -314,13 +341,19 @@ export default function TeacherPanel() {
                   {historyRecords.map((r) => (
                     <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
                       <div>
-                        <p className="text-sm font-semibold text-gray-800">
-                          {new Date(r.scannedAt).toLocaleDateString('es-PY', { weekday: 'short', day: '2-digit', month: 'short' })}
+                        <p className="text-sm font-semibold text-gray-800">{fechaLarga(r.fecha)}</p>
+                        <p className="text-xs text-gray-400">
+                          {r.course} · {r.status === 'late' ? 'Llegó tarde' : 'Puntual'}
                         </p>
-                        <p className="text-xs text-gray-400">{r.course}</p>
                       </div>
-                      <span className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200">
-                        {new Date(r.scannedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <span
+                        className={
+                          r.status === 'late'
+                            ? 'bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-xs font-bold border border-amber-200'
+                            : 'bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200'
+                        }
+                      >
+                        {hora(r.scannedAt)}
                       </span>
                     </div>
                   ))}
