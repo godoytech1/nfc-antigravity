@@ -65,6 +65,13 @@ export function useAttendance() {
         const record = fromRow(payload.new as Row);
         setRecords((prev) => (prev.some((r) => r.id === record.id) ? prev : [record, ...prev]));
       })
+      // Si se limpian los datos desde la app, el panel abierto tiene que
+      // enterarse en vez de seguir mostrando filas que ya no existen.
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'asistencias' }, (payload) => {
+        const borrado = (payload.old as { id?: string }).id;
+        if (!borrado) return;
+        setRecords((prev) => prev.filter((r) => r.id !== borrado));
+      })
       .subscribe();
 
     return () => {

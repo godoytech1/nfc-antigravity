@@ -49,7 +49,11 @@ export function useJustifications() {
     const channel = supabase
       .channel('web-justificativos-db')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'justificativos' }, (payload) => {
-        if (payload.eventType === 'DELETE') return;
+        if (payload.eventType === 'DELETE') {
+          const borrado = (payload.old as { id?: string }).id;
+          if (borrado) setItems((prev) => prev.filter((j) => j.id !== borrado));
+          return;
+        }
         const item = fromRow(payload.new as Row);
         setItems((prev) => {
           const i = prev.findIndex((x) => x.id === item.id);

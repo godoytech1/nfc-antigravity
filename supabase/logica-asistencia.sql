@@ -68,9 +68,13 @@ alter table public.asistencias drop constraint if exists asistencias_status_chec
 alter table public.asistencias add constraint asistencias_status_check
   check (status in ('ontime', 'late', 'absent'));
 
--- El estado y la fecha los pone la base, nunca el cliente: la app puede
--- mandar cualquier cosa en "status" y se pisa igual. Esto es lo que hace
--- que la puntualidad no se pueda falsear desde el celular.
+-- La hora, la fecha y el estado los pone la BASE, nunca el cliente.
+--
+-- Ojo con esto: no alcanza con pisar "status". Si se confía en el
+-- "scanned_at" que manda el cliente, cualquiera puede mandar una hora de
+-- llegada falsa (ej. las 07:00) y el trigger deduce "puntual" de ese dato
+-- mentido. Por eso también se pisa scanned_at con la hora del servidor:
+-- una llegada se registra cuando ocurre, no cuando el cliente dice.
 create or replace function public.set_asistencia_fields()
 returns trigger
 language plpgsql
@@ -83,9 +87,10 @@ declare
 begin
   select * into cfg from public.configuracion where id = 1;
 
-  new.fecha  := (new.scanned_at at time zone cfg.zona_horaria)::date;
-  hora_local := (new.scanned_at at time zone cfg.zona_horaria)::time;
-  limite     := cfg.hora_entrada + make_interval(mins => cfg.tolerancia_minutos);
+  new.scanned_at := now();
+  new.fecha      := (new.scanned_at at time zone cfg.zona_horaria)::date;
+  hora_local     := (new.scanned_at at time zone cfg.zona_horaria)::time;
+  limite         := cfg.hora_entrada + make_interval(mins => cfg.tolerancia_minutos);
 
   new.status := case when hora_local <= limite then 'ontime' else 'late' end;
   return new;
@@ -119,6 +124,19 @@ create unique index if not exists asistencias_unicas_por_dia
 
 create index if not exists asistencias_por_fecha on public.asistencias (fecha desc);
 create index if not exists asistencias_por_curso_fecha on public.asistencias (course, fecha desc);
+
+-- ── 3b. Qué días hubo clase, sin exponer a los compañeros ──────────────────
+-- El alumno necesita saber qué días hubo clase en su curso para poder ver
+-- sus faltas ("el martes no figurás"). Pero RLS le impide —bien— ver la
+-- asistencia de sus compañeros, que es de donde sale ese dato.
+--
+-- Esta vista resuelve las dos cosas: corre con permisos del dueño (saltea
+-- RLS) pero expone ÚNICAMENTE curso y fecha. Ningún nombre, ningún horario,
+-- nada de quién vino y quién no.
+create or replace view public.dias_de_clase as
+  select distinct course, fecha from public.asistencias;
+
+grant select on public.dias_de_clase to authenticated;
 
 -- ── 4. Justificativos: justifican una fecha concreta ───────────────────────
 alter table public.justificativos
