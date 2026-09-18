@@ -41,6 +41,20 @@ export function useConfig() {
 
   useEffect(() => {
     reload();
+
+    // Sin esto, un panel ya abierto se quedaba con el horario/tolerancia
+    // viejos si otra sesión los cambiaba — y al guardar podía pisar ese
+    // cambio ajeno sin darse cuenta.
+    const channel = supabase
+      .channel('web-configuracion-db')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'configuracion' }, () => {
+        reload();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [reload]);
 
   const update = useCallback(async (next: Configuracion) => {

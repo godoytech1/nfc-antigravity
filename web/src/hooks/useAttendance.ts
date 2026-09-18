@@ -28,14 +28,20 @@ function fromRow(r: Row): AttendanceRecord {
 // siempre, sin límite.
 const DIAS_DE_HISTORIAL = 60;
 
+// Zona horaria fija del colegio (misma que usa el trigger set_asistencia_fields
+// en la base). Antes se usaba la hora local de la computadora del profesor:
+// si no tenía bien configurada la zona horaria, "hoy" podía no coincidir con
+// la fecha real que la base ya calculó para una llegada.
+const ZONA_HORARIA = 'America/Asuncion';
+
 export function todayISO() {
-  return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+  return new Intl.DateTimeFormat('en-CA', { timeZone: ZONA_HORARIA }).format(new Date());
 }
 
 function desdeISO(dias: number) {
   const d = new Date();
   d.setDate(d.getDate() - dias);
-  return d.toLocaleDateString('en-CA');
+  return new Intl.DateTimeFormat('en-CA', { timeZone: ZONA_HORARIA }).format(d);
 }
 
 // Misma tabla que usa la app (public.asistencias). El estado puntual/tarde

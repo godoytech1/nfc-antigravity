@@ -63,6 +63,14 @@ export default function TeacherPanel() {
     }
   };
 
+  const handleRespond = async (id: string, status: 'approved' | 'denied') => {
+    try {
+      await respond(id, status);
+    } catch (e: any) {
+      alert(e?.message ?? 'No se pudo actualizar el justificativo. Probá de nuevo.');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col h-screen overflow-hidden">
       {/* Top Navbar */}
@@ -179,13 +187,13 @@ export default function TeacherPanel() {
                         Ver motivo
                       </button>
                       <button
-                        onClick={() => respond(justification.id, 'denied')}
+                        onClick={() => handleRespond(justification.id, 'denied')}
                         className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
                       >
                         Denegar
                       </button>
                       <button
-                        onClick={() => respond(justification.id, 'approved')}
+                        onClick={() => handleRespond(justification.id, 'approved')}
                         className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
                       >
                         Aprobar
@@ -283,7 +291,7 @@ export default function TeacherPanel() {
               <div className="p-6 border-t border-gray-100 flex gap-4 bg-gray-50">
                 <button
                   onClick={() => {
-                    respond(selectedJustification.id, 'denied');
+                    handleRespond(selectedJustification.id, 'denied');
                     setSelectedJustification(null);
                   }}
                   className="flex-1 py-3 rounded-xl font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer"
@@ -292,7 +300,7 @@ export default function TeacherPanel() {
                 </button>
                 <button
                   onClick={() => {
-                    respond(selectedJustification.id, 'approved');
+                    handleRespond(selectedJustification.id, 'approved');
                     setSelectedJustification(null);
                   }}
                   className="flex-1 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 transition-colors cursor-pointer"

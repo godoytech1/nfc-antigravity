@@ -72,9 +72,15 @@ export function useJustifications() {
   }, []);
 
   const respond = async (id: string, status: 'approved' | 'denied') => {
-    setItems((prev) => prev.map((j) => (j.id === id ? { ...j, status } : j))); // reflejo optimista
+    // Antes esto se reflejaba en pantalla ANTES de confirmar el update: si
+    // fallaba (sesión vencida, corte de red), la tarjeta quedaba mostrando
+    // "resuelto" mientras en la base seguía 'pending', sin ningún aviso.
     const { error } = await supabase.from('justificativos').update({ status }).eq('id', id);
-    if (error) console.warn('No se pudo actualizar el justificativo:', error.message);
+    if (error) {
+      console.warn('No se pudo actualizar el justificativo:', error.message);
+      throw error;
+    }
+    setItems((prev) => prev.map((j) => (j.id === id ? { ...j, status } : j)));
   };
 
   const clearAll = async () => {
