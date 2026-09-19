@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, FileText, CheckCircle2, XCircle, Settings, Users } from 'lucide-react';
+import { LogOut, FileText, CheckCircle2, XCircle, Settings, Users, Smartphone } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAttendance, todayISO } from '../../hooks/useAttendance';
 import { useJustifications } from '../../hooks/useJustifications';
 import { useStudents } from '../../hooks/useStudents';
 import { signOut } from '../../services/auth';
 import SettingsModal from '../../components/SettingsModal';
+import { avatarColorFor, initialsFor } from '../../theme';
 import type { Justification } from '../../types';
 
 // "2026-09-13" -> "sáb, 13 sept." sin corrimiento de zona horaria
@@ -21,6 +22,17 @@ function fechaLarga(fecha: string) {
 
 function hora(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function Avatar({ nombre, size = 40 }: { nombre: string; size?: number }) {
+  return (
+    <div
+      className="rounded-full flex items-center justify-center text-white font-bold shrink-0"
+      style={{ width: size, height: size, backgroundColor: avatarColorFor(nombre), fontSize: size * 0.34 }}
+    >
+      {initialsFor(nombre)}
+    </div>
+  );
 }
 
 export default function TeacherPanel() {
@@ -40,7 +52,7 @@ export default function TeacherPanel() {
     return null;
   }
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-400">Cargando...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-muted">Cargando...</div>;
   }
 
   const hoy = todayISO();
@@ -72,27 +84,27 @@ export default function TeacherPanel() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col h-screen overflow-hidden bg-paper">
-      {/* Masthead */}
-      <header className="border-b border-rule px-8 pt-5 pb-4 flex justify-between items-end shrink-0">
+    <div className="min-h-screen flex flex-col h-screen overflow-hidden bg-bg">
+      {/* Header */}
+      <header className="bg-card border-b border-border px-8 py-4 flex justify-between items-center shrink-0">
         <div>
-          <p className="font-mono text-[11px] tracking-[0.2em] text-ink-soft">SAN IGNACIO DE LOYOLA</p>
-          <h1 className="font-serif text-2xl text-ink mt-0.5">Registro de asistencia</h1>
-          <p className="text-sm text-ink-soft mt-1">
+          <p className="text-[11px] font-bold text-label uppercase tracking-wide">Panel de profesores</p>
+          <h1 className="text-xl font-bold text-title mt-0.5">San Ignacio de Loyola</h1>
+          <p className="text-sm text-muted mt-0.5">
             {profile?.fullName} · {email}
           </p>
         </div>
-        <div className="flex items-center gap-5 pb-1">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setShowSettings(true)}
-            className="flex items-center gap-1.5 text-ink-soft hover:text-ink transition-colors text-sm font-medium cursor-pointer"
+            className="flex items-center gap-2 text-body hover:bg-primary-light hover:text-primary transition-colors px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer"
           >
             <Settings size={16} />
             <span>Configuración</span>
           </button>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 text-ink-soft hover:text-ink transition-colors text-sm font-medium cursor-pointer"
+            className="flex items-center gap-2 text-body hover:bg-primary-light hover:text-primary transition-colors px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer"
           >
             <LogOut size={16} />
             <span>Salir</span>
@@ -101,42 +113,49 @@ export default function TeacherPanel() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-hidden p-6 gap-6">
         {/* Left Panel: Live Scans */}
-        <section className="flex-1 flex flex-col overflow-hidden border-r border-rule">
-          <div className="px-8 pt-6 pb-4">
-            <h2 className="font-serif text-lg text-ink">Llegadas de hoy</h2>
-            <p className="text-sm text-ink-soft mt-1">
-              {todayScans.length} {todayScans.length === 1 ? 'llegada' : 'llegadas'}
-              {tardeHoy > 0 ? ` · ${tardeHoy} con retraso` : ''} — tocá un alumno para ver su historial
-            </p>
+        <section className="flex-1 bg-card rounded-2xl border border-border flex flex-col overflow-hidden">
+          <div className="p-6 border-b border-border flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary-light flex items-center justify-center shrink-0">
+              <Smartphone size={18} className="text-primary" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-title">Llegadas de hoy</h2>
+              <p className="text-xs text-muted mt-0.5">
+                {todayScans.length} {todayScans.length === 1 ? 'llegada' : 'llegadas'}
+                {tardeHoy > 0 ? ` · ${tardeHoy} con retraso` : ''}
+              </p>
+            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-8 pb-8">
+          <div className="flex-1 overflow-y-auto p-4">
             {todayScans.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-ink-soft border-t border-rule">
+              <div className="h-full flex flex-col items-center justify-center text-muted text-sm">
                 <p>Esperando la primera llegada de hoy.</p>
               </div>
             ) : (
-              <div className="border-t border-rule">
+              <div className="flex flex-col gap-2">
                 {todayScans.map((scan) => (
                   <button
                     key={scan.id}
                     onClick={() => setHistoryStudent(scan.studentId ? { id: scan.studentId, name: scan.studentName } : null)}
-                    className="w-full text-left py-3.5 flex items-center justify-between border-b border-rule hover:bg-brass-soft/40 transition-colors cursor-pointer px-1"
+                    className="text-left bg-card border border-border p-3 rounded-2xl flex items-center gap-3 hover:border-primary-light hover:bg-primary-light/40 transition-colors cursor-pointer"
                   >
-                    <div>
-                      <p className="font-semibold text-ink">{scan.studentName}</p>
-                      <p className="text-sm text-ink-soft">{scan.course}</p>
+                    <Avatar nombre={scan.studentName} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-title truncate">{scan.studentName}</p>
+                      <p className="text-sm text-muted">{scan.course}</p>
                     </div>
-                    <div
+                    <span
                       className={
-                        'font-mono text-sm font-medium ' + (scan.status === 'late' ? 'text-late' : 'text-ontime')
+                        'px-3 py-1 rounded-full text-xs font-bold shrink-0 ' +
+                        (scan.status === 'late' ? 'bg-warning-bg text-warning' : 'bg-success-bg text-success')
                       }
                     >
-                      {scan.status === 'late' ? 'tarde · ' : ''}
+                      {scan.status === 'late' ? 'Tarde · ' : ''}
                       {hora(scan.scannedAt)}
-                    </div>
+                    </span>
                   </button>
                 ))}
               </div>
@@ -145,45 +164,45 @@ export default function TeacherPanel() {
         </section>
 
         {/* Middle Panel: Justifications */}
-        <section className="w-96 flex flex-col overflow-hidden border-r border-rule shrink-0">
-          <div className="px-8 pt-6 pb-4">
-            <h2 className="font-serif text-lg text-ink flex items-center gap-2">
-              <FileText size={18} className="text-brass" />
-              Justificativos
-            </h2>
+        <section className="w-96 bg-card rounded-2xl border border-border flex flex-col overflow-hidden shrink-0">
+          <div className="p-6 border-b border-border flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary-light flex items-center justify-center shrink-0">
+              <FileText size={18} className="text-primary" />
+            </div>
+            <h2 className="text-base font-bold text-title">Justificativos</h2>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-8 pb-8">
+          <div className="flex-1 overflow-y-auto p-4">
             {pending.length === 0 && resolved.length === 0 ? (
-              <div className="text-ink-soft border-t border-rule pt-6">No hay justificativos todavía.</div>
+              <div className="text-muted text-sm text-center mt-6">No hay justificativos todavía.</div>
             ) : (
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-3">
                 {pending.map((justification) => (
-                  <div key={justification.id} className="border-t border-rule pt-4">
-                    <h3 className="font-semibold text-ink">
-                      {justification.studentName} <span className="text-ink-soft font-normal">({justification.course})</span>
+                  <div key={justification.id} className="border border-border rounded-2xl p-4">
+                    <h3 className="font-semibold text-title">
+                      {justification.studentName} <span className="text-muted font-normal">({justification.course})</span>
                     </h3>
-                    <p className="text-xs text-brass font-semibold mt-0.5">
+                    <p className="text-xs text-label font-bold mt-0.5">
                       Falta del {fechaLarga(justification.fecha)}
                     </p>
-                    <p className="text-sm text-ink-soft mt-1.5 line-clamp-2">{justification.reason}</p>
+                    <p className="text-sm text-body mt-1.5 line-clamp-2">{justification.reason}</p>
 
-                    <div className="mt-3 flex gap-4 text-sm font-medium">
+                    <div className="mt-3 flex gap-2">
                       <button
                         onClick={() => setSelectedJustification(justification)}
-                        className="text-ink-soft hover:text-ink transition-colors cursor-pointer"
+                        className="flex-1 bg-bg hover:bg-border text-body py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
                       >
                         Ver motivo
                       </button>
                       <button
                         onClick={() => handleRespond(justification.id, 'denied')}
-                        className="text-danger hover:opacity-70 transition-opacity cursor-pointer"
+                        className="flex-1 bg-danger-bg hover:opacity-80 text-danger py-2 rounded-xl text-sm font-semibold transition-opacity cursor-pointer"
                       >
                         Denegar
                       </button>
                       <button
                         onClick={() => handleRespond(justification.id, 'approved')}
-                        className="text-ontime hover:opacity-70 transition-opacity cursor-pointer"
+                        className="flex-1 bg-primary hover:bg-primary-dark text-white py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
                       >
                         Aprobar
                       </button>
@@ -193,19 +212,19 @@ export default function TeacherPanel() {
 
                 {resolved.map((justification) =>
                   justification.status === 'approved' ? (
-                    <div key={justification.id} className="border-t border-rule pt-4 flex gap-3 items-start">
-                      <CheckCircle2 size={17} className="text-ontime shrink-0 mt-0.5" />
+                    <div key={justification.id} className="bg-success-bg rounded-2xl p-4 flex gap-3 items-start">
+                      <CheckCircle2 size={18} className="text-success shrink-0 mt-0.5" />
                       <div>
-                        <h3 className="font-semibold text-ink text-sm">Inasistencia justificada</h3>
-                        <p className="text-sm text-ink-soft mt-0.5">{justification.studentName} ({justification.course})</p>
+                        <h3 className="font-semibold text-title text-sm">Inasistencia justificada</h3>
+                        <p className="text-sm text-body mt-0.5">{justification.studentName} ({justification.course})</p>
                       </div>
                     </div>
                   ) : (
-                    <div key={justification.id} className="border-t border-rule pt-4 flex gap-3 items-start">
-                      <XCircle size={17} className="text-danger shrink-0 mt-0.5" />
+                    <div key={justification.id} className="bg-danger-bg rounded-2xl p-4 flex gap-3 items-start">
+                      <XCircle size={18} className="text-danger shrink-0 mt-0.5" />
                       <div>
-                        <h3 className="font-semibold text-ink text-sm">Justificativo denegado</h3>
-                        <p className="text-sm text-ink-soft mt-0.5">{justification.studentName} ({justification.course})</p>
+                        <h3 className="font-semibold text-title text-sm">Justificativo denegado</h3>
+                        <p className="text-sm text-body mt-0.5">{justification.studentName} ({justification.course})</p>
                       </div>
                     </div>
                   )
@@ -216,27 +235,32 @@ export default function TeacherPanel() {
         </section>
 
         {/* Right Panel: Enrolled students -> per-student history */}
-        <section className="w-72 flex flex-col overflow-hidden shrink-0">
-          <div className="px-8 pt-6 pb-4">
-            <h2 className="font-serif text-lg text-ink flex items-center gap-2">
-              <Users size={18} className="text-brass" />
-              Alumnos
-            </h2>
-            <p className="text-sm text-ink-soft mt-1">{students.length} registrados</p>
+        <section className="w-72 bg-card rounded-2xl border border-border flex flex-col overflow-hidden shrink-0">
+          <div className="p-6 border-b border-border flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary-light flex items-center justify-center shrink-0">
+              <Users size={18} className="text-primary" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-title">Alumnos</h2>
+              <p className="text-xs text-muted mt-0.5">{students.length} registrados</p>
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto px-8 pb-8">
+          <div className="flex-1 overflow-y-auto p-4">
             {students.length === 0 ? (
-              <div className="text-ink-soft border-t border-rule pt-6">Todavía no hay alumnos registrados en la app.</div>
+              <div className="text-muted text-sm text-center mt-6 px-2">Todavía no hay alumnos registrados en la app.</div>
             ) : (
-              <div className="border-t border-rule">
+              <div className="flex flex-col gap-1">
                 {students.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => setHistoryStudent({ id: s.id, name: s.fullName })}
-                    className="w-full text-left py-3 border-b border-rule hover:bg-brass-soft/40 transition-colors cursor-pointer px-1"
+                    className="text-left p-2.5 rounded-xl hover:bg-primary-light/50 transition-colors cursor-pointer flex items-center gap-3"
                   >
-                    <p className="font-semibold text-ink text-sm">{s.fullName}</p>
-                    <p className="text-xs text-ink-soft mt-0.5">{s.course}</p>
+                    <Avatar nombre={s.fullName} size={34} />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-title text-sm truncate">{s.fullName}</p>
+                      <p className="text-xs text-muted">{s.course}</p>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -247,40 +271,43 @@ export default function TeacherPanel() {
 
       {/* Modal: Justification Detail */}
       {selectedJustification && (
-        <div className="fixed inset-0 bg-ink/50 z-50 flex items-center justify-center p-6">
-          <div className="bg-paper-raised w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] border-t-2 border-brass">
-            <div className="px-7 pt-6 pb-5 flex justify-between items-start">
-              <h3 className="font-serif text-xl text-ink">Detalle del justificativo</h3>
-              <button onClick={() => setSelectedJustification(null)} className="text-ink-soft hover:text-ink cursor-pointer">
+        <div className="fixed inset-0 bg-title/50 z-50 flex items-center justify-center p-6">
+          <div className="bg-card rounded-3xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-border flex justify-between items-center">
+              <h3 className="text-lg font-bold text-title">Detalle del justificativo</h3>
+              <button onClick={() => setSelectedJustification(null)} className="text-muted hover:text-title cursor-pointer">
                 <XCircle size={22} />
               </button>
             </div>
 
-            <div className="px-7 overflow-y-auto flex-1 border-t border-rule pt-5">
-              <div className="mb-5">
-                <label className="text-xs font-semibold text-ink-soft">Alumno</label>
-                <p className="text-ink font-semibold mt-0.5">
-                  {selectedJustification.studentName} ({selectedJustification.course})
-                </p>
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="mb-5 flex items-center gap-3">
+                <Avatar nombre={selectedJustification.studentName} />
+                <div>
+                  <p className="text-xs font-bold text-label uppercase tracking-wide">Alumno</p>
+                  <p className="text-title font-semibold">
+                    {selectedJustification.studentName} ({selectedJustification.course})
+                  </p>
+                </div>
               </div>
               <div className="mb-5">
-                <label className="text-xs font-semibold text-ink-soft">Día que justifica</label>
-                <p className="text-ink font-semibold mt-0.5">{fechaLarga(selectedJustification.fecha)}</p>
+                <label className="text-xs font-bold text-label uppercase tracking-wide">Día que justifica</label>
+                <p className="text-title font-semibold mt-1">{fechaLarga(selectedJustification.fecha)}</p>
               </div>
               <div>
-                <label className="text-xs font-semibold text-ink-soft">Motivo</label>
-                <p className="text-ink mt-1.5 leading-relaxed">{selectedJustification.reason}</p>
+                <label className="text-xs font-bold text-label uppercase tracking-wide">Motivo</label>
+                <p className="text-body p-4 bg-bg rounded-xl mt-1.5 leading-relaxed">{selectedJustification.reason}</p>
               </div>
             </div>
 
             {selectedJustification.status === 'pending' && (
-              <div className="px-7 py-5 border-t border-rule flex gap-3 mt-5">
+              <div className="p-6 border-t border-border flex gap-3 bg-bg/60">
                 <button
                   onClick={() => {
                     handleRespond(selectedJustification.id, 'denied');
                     setSelectedJustification(null);
                   }}
-                  className="flex-1 py-2.5 font-semibold text-danger border border-danger/30 hover:bg-danger-soft transition-colors cursor-pointer"
+                  className="flex-1 py-3 rounded-xl font-bold text-danger bg-danger-bg hover:opacity-80 transition-opacity cursor-pointer"
                 >
                   Denegar
                 </button>
@@ -289,7 +316,7 @@ export default function TeacherPanel() {
                     handleRespond(selectedJustification.id, 'approved');
                     setSelectedJustification(null);
                   }}
-                  className="flex-1 py-2.5 font-semibold text-paper bg-ontime hover:opacity-90 transition-opacity cursor-pointer"
+                  className="flex-1 py-3 rounded-xl font-bold text-white bg-primary hover:bg-primary-dark transition-colors cursor-pointer"
                 >
                   Aprobar falta
                 </button>
@@ -301,34 +328,38 @@ export default function TeacherPanel() {
 
       {/* Modal: Student History */}
       {historyStudent && (
-        <div className="fixed inset-0 bg-ink/50 z-50 flex items-center justify-center p-6">
-          <div className="bg-paper-raised w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] border-t-2 border-brass">
-            <div className="px-7 pt-6 pb-5 flex justify-between items-start">
-              <div>
-                <h3 className="font-serif text-xl text-ink">{historyStudent.name}</h3>
-                <p className="text-sm text-ink-soft mt-0.5">Historial de asistencia</p>
+        <div className="fixed inset-0 bg-title/50 z-50 flex items-center justify-center p-6">
+          <div className="bg-card rounded-3xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="p-6 border-b border-border flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <Avatar nombre={historyStudent.name} />
+                <div>
+                  <h3 className="text-lg font-bold text-title">{historyStudent.name}</h3>
+                  <p className="text-sm text-muted">Historial de asistencia</p>
+                </div>
               </div>
-              <button onClick={() => setHistoryStudent(null)} className="text-ink-soft hover:text-ink cursor-pointer">
+              <button onClick={() => setHistoryStudent(null)} className="text-muted hover:text-title cursor-pointer">
                 <XCircle size={22} />
               </button>
             </div>
-            <div className="px-7 overflow-y-auto flex-1 border-t border-rule">
+            <div className="p-6 overflow-y-auto flex-1">
               {historyRecords.length === 0 ? (
-                <p className="text-ink-soft mt-6">Todavía no tiene ninguna llegada registrada.</p>
+                <p className="text-center text-muted mt-6">Todavía no tiene ninguna llegada registrada.</p>
               ) : (
-                <div>
+                <div className="flex flex-col gap-2">
                   {historyRecords.map((r) => (
-                    <div key={r.id} className="flex items-center justify-between py-3 border-b border-rule">
+                    <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-bg">
                       <div>
-                        <p className="text-sm font-semibold text-ink">{fechaLarga(r.fecha)}</p>
-                        <p className="text-xs text-ink-soft mt-0.5">{r.course}</p>
+                        <p className="text-sm font-semibold text-title">{fechaLarga(r.fecha)}</p>
+                        <p className="text-xs text-muted">{r.course}</p>
                       </div>
                       <span
                         className={
-                          'font-mono text-sm font-medium ' + (r.status === 'late' ? 'text-late' : 'text-ontime')
+                          'px-3 py-1 rounded-full text-xs font-bold ' +
+                          (r.status === 'late' ? 'bg-warning-bg text-warning' : 'bg-success-bg text-success')
                         }
                       >
-                        {r.status === 'late' ? 'tarde · ' : ''}
+                        {r.status === 'late' ? 'Tarde · ' : ''}
                         {hora(r.scannedAt)}
                       </span>
                     </div>
@@ -336,7 +367,6 @@ export default function TeacherPanel() {
                 </div>
               )}
             </div>
-            <div className="h-6 shrink-0" />
           </div>
         </div>
       )}

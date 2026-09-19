@@ -1,36 +1,31 @@
 @import "tailwindcss";
 
-/*
-  Identidad "libro de asistencia": tinta sobre papel, reglas finas en vez
-  de sombras y tarjetas redondeadas. El serif es para títulos con peso
-  institucional; todo lo que un profesor tiene que leer rápido (listas,
-  botones, formularios) usa el sans. Las horas usan mono para que las
-  columnas de dígitos alineen, como en una planilla real.
-*/
+/* Mismos tokens que mobile/src/theme.ts, para que esto se vea como la app. */
 @theme {
-  --color-ink: #16233D;
-  --color-ink-soft: #4B5768;
-  --color-paper: #FAF9F6;
-  --color-paper-raised: #FFFFFF;
-  --color-rule: #DAD5C8;
-  --color-rule-strong: #BFB9A9;
-  --color-brass: #9C6B2E;
-  --color-brass-soft: #F3EADA;
-  --color-ontime: #3A6B52;
-  --color-ontime-soft: #E8F0EA;
-  --color-late: #9C6B2E;
-  --color-late-soft: #F3EADA;
-  --color-danger: #9B3B3B;
-  --color-danger-soft: #F5E6E4;
+  --color-primary: #4F46E5;
+  --color-primary-light: #EEF2FF;
+  --color-primary-dark: #4338CA;
 
-  --font-serif: "Source Serif 4", Georgia, serif;
-  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-bg: #F8FAFC;
+  --color-card: #FFFFFF;
+  --color-border: #EEF0F4;
+
+  --color-title: #0F172A;
+  --color-label: #6366F1;
+  --color-body: #334155;
+  --color-muted: #94A3B8;
+
+  --color-success: #10B981;
+  --color-success-bg: #D1FAE5;
+  --color-danger: #EF4444;
+  --color-danger-bg: #FEE2E2;
+  --color-warning: #F59E0B;
+  --color-warning-bg: #FEF3C7;
 }
 
 body {
   margin: 0;
-  font-family: var(--font-sans);
-  background-color: var(--color-paper);
-  color: var(--color-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-body);
 }
