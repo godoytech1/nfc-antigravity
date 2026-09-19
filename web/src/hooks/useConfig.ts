@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { supabase } from '../services/realtime';
 
 export type Configuracion = {
@@ -31,6 +31,10 @@ export function limiteDeTardanza(config: Configuracion) {
 // decide puntual/tarde, así el panel y la app muestran siempre lo mismo.
 export function useConfig() {
   const [config, setConfig] = useState<Configuracion>(POR_DEFECTO);
+  // TeacherPanel y SettingsModal llaman a este hook al mismo tiempo; cada
+  // instancia necesita su PROPIO canal, porque Supabase no deja agregar un
+  // listener a un canal que otra instancia ya suscribió con el mismo nombre.
+  const uid = useId();
 
   const reload = useCallback(async () => {
     const { data, error } = await supabase.from('configuracion').select('*').eq('id', 1).single();
@@ -46,7 +50,7 @@ export function useConfig() {
     // viejos si otra sesión los cambiaba — y al guardar podía pisar ese
     // cambio ajeno sin darse cuenta.
     const channel = supabase
-      .channel('web-configuracion-db')
+      .channel(`web-configuracion-db-${uid}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'configuracion' }, () => {
         reload();
       })
@@ -55,7 +59,7 @@ export function useConfig() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [reload]);
+  }, [reload, uid]);
 
   const update = useCallback(async (next: Configuracion) => {
     const { error } = await supabase
