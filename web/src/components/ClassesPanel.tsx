@@ -28,11 +28,6 @@ function etiquetaDia(fecha: string, hoy: string) {
   return `${DIAS_CORTOS[new Date(y, m - 1, d).getDay()]} ${d}`;
 }
 
-function fechaLarga(fecha: string) {
-  const [y, m, d] = fecha.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('es-PY', { weekday: 'short', day: '2-digit', month: 'short' });
-}
-
 function hora(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
@@ -330,23 +325,28 @@ function ArrivalDetailModal({
   onRemoveArrival: Props['onRemoveArrival'];
   onClose: () => void;
 }) {
+  const hoy = todayISO();
+  const fechaOriginal = registro.fecha;
   const horaOriginal = horaHHMM(registro.scannedAt);
+  const [fechaElegida, setFechaElegida] = useState(fechaOriginal);
   const [horaElegida, setHoraElegida] = useState(horaOriginal);
   const [guardando, setGuardando] = useState(false);
   const [quitando, setQuitando] = useState(false);
 
   const estadoPredicho = prediceEstado(horaElegida, config);
-  const cambioAlgo = horaElegida !== horaOriginal;
-  const esHoy = registro.fecha === todayISO();
+  const cambioAlgo = fechaElegida !== fechaOriginal || horaElegida !== horaOriginal;
+  const esHoy = registro.fecha === hoy;
 
   const handleGuardar = async () => {
     setGuardando(true);
     try {
-      const iso = `${registro.fecha}T${horaElegida}:00${OFFSET_PY}`;
+      const iso = `${fechaElegida}T${horaElegida}:00${OFFSET_PY}`;
       await onSetArrivalTime(registro.id, iso);
       onClose();
     } catch (e: any) {
-      alert(e?.message ?? 'No se pudo guardar.');
+      const mensaje =
+        e?.code === '23505' ? `${student.fullName} ya tiene otra llegada registrada ese día.` : e?.message ?? 'No se pudo guardar.';
+      alert(mensaje);
     } finally {
       setGuardando(false);
     }
@@ -375,7 +375,7 @@ function ArrivalDetailModal({
           <Avatar nombre={student.fullName} />
           <div className="flex-1">
             <h3 className="font-bold text-title">{student.fullName}</h3>
-            <p className="text-sm text-muted">{fechaLarga(registro.fecha)}</p>
+            <p className="text-sm text-muted">Corregir asistencia</p>
           </div>
           <button onClick={onClose} className="text-muted hover:text-title cursor-pointer">
             <X size={20} />
@@ -383,7 +383,16 @@ function ArrivalDetailModal({
         </div>
 
         <div className="p-6">
-          <label className="text-xs font-bold text-label uppercase tracking-wide mb-2 block">Hora de llegada</label>
+          <label className="text-xs font-bold text-label uppercase tracking-wide mb-2 block">Fecha</label>
+          <input
+            type="date"
+            value={fechaElegida}
+            max={hoy}
+            onChange={(e) => setFechaElegida(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary bg-bg text-title text-lg font-semibold"
+          />
+
+          <label className="text-xs font-bold text-label uppercase tracking-wide mb-2 mt-4 block">Hora de llegada</label>
           <input
             type="time"
             value={horaElegida}
