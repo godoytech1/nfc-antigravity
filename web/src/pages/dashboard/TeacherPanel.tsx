@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Zap, FileText, CheckCircle2, XCircle, Settings, Users, Clock } from 'lucide-react';
+import { LogOut, FileText, CheckCircle2, XCircle, Settings, Users } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAttendance, todayISO } from '../../hooks/useAttendance';
 import { useJustifications } from '../../hooks/useJustifications';
@@ -72,80 +72,69 @@ export default function TeacherPanel() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col h-screen overflow-hidden">
-      {/* Top Navbar */}
-      <header className="bg-[#0F294A] text-white p-4 px-8 flex justify-between items-center shrink-0">
+    <div className="min-h-screen flex flex-col h-screen overflow-hidden bg-paper">
+      {/* Masthead */}
+      <header className="border-b border-rule px-8 pt-5 pb-4 flex justify-between items-end shrink-0">
         <div>
-          <h1 className="text-xl font-bold">Panel de Profesores (BTI, BTC, Sociales)</h1>
-          <p className="text-sm text-blue-200">
-            {profile?.fullName} · {email} · Sincronizado en vivo con la app
+          <p className="font-mono text-[11px] tracking-[0.2em] text-ink-soft">SAN IGNACIO DE LOYOLA</p>
+          <h1 className="font-serif text-2xl text-ink mt-0.5">Registro de asistencia</h1>
+          <p className="text-sm text-ink-soft mt-1">
+            {profile?.fullName} · {email}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-5 pb-1">
           <button
             onClick={() => setShowSettings(true)}
-            className="flex items-center gap-2 text-blue-200 hover:text-white transition-colors bg-white/10 px-4 py-2 rounded-lg cursor-pointer"
+            className="flex items-center gap-1.5 text-ink-soft hover:text-ink transition-colors text-sm font-medium cursor-pointer"
           >
-            <Settings size={18} />
+            <Settings size={16} />
             <span>Configuración</span>
           </button>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 text-blue-200 hover:text-white transition-colors bg-white/10 px-4 py-2 rounded-lg cursor-pointer"
+            className="flex items-center gap-1.5 text-ink-soft hover:text-ink transition-colors text-sm font-medium cursor-pointer"
           >
-            <LogOut size={18} />
+            <LogOut size={16} />
             <span>Salir</span>
           </button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex overflow-hidden p-6 gap-6 bg-gray-100">
+      <main className="flex-1 flex overflow-hidden">
         {/* Left Panel: Live Scans */}
-        <section className="flex-1 bg-white rounded-3xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-          <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              Llegadas Registradas Hoy <Zap size={20} className="text-yellow-500 fill-yellow-500" />
-            </h2>
-            <p className="text-sm text-gray-400 mt-1">
+        <section className="flex-1 flex flex-col overflow-hidden border-r border-rule">
+          <div className="px-8 pt-6 pb-4">
+            <h2 className="font-serif text-lg text-ink">Llegadas de hoy</h2>
+            <p className="text-sm text-ink-soft mt-1">
               {todayScans.length} {todayScans.length === 1 ? 'llegada' : 'llegadas'}
-              {tardeHoy > 0 ? ` · ${tardeHoy} con retraso` : ''} · tocá un alumno para ver su historial.
+              {tardeHoy > 0 ? ` · ${tardeHoy} con retraso` : ''} — tocá un alumno para ver su historial
             </p>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto px-8 pb-8">
             {todayScans.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                  <Zap size={32} className="text-gray-300" />
-                </div>
-                <p>Esperando el primer escaneo de hoy...</p>
+              <div className="h-full flex flex-col items-center justify-center text-ink-soft border-t border-rule">
+                <p>Esperando la primera llegada de hoy.</p>
               </div>
             ) : (
-              <div className="grid gap-3">
+              <div className="border-t border-rule">
                 {todayScans.map((scan) => (
                   <button
                     key={scan.id}
                     onClick={() => setHistoryStudent(scan.studentId ? { id: scan.studentId, name: scan.studentName } : null)}
-                    className="text-left bg-white border border-gray-200 p-4 rounded-2xl flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
+                    className="w-full text-left py-3.5 flex items-center justify-between border-b border-rule hover:bg-brass-soft/40 transition-colors cursor-pointer px-1"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-lg border border-blue-100">
-                        {scan.studentName.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900">{scan.studentName}</p>
-                        <p className="text-sm text-gray-500">{scan.course}</p>
-                      </div>
+                    <div>
+                      <p className="font-semibold text-ink">{scan.studentName}</p>
+                      <p className="text-sm text-ink-soft">{scan.course}</p>
                     </div>
                     <div
                       className={
-                        scan.status === 'late'
-                          ? 'bg-amber-50 text-amber-700 px-4 py-1.5 rounded-full text-sm font-bold border border-amber-200'
-                          : 'bg-green-50 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200'
+                        'font-mono text-sm font-medium ' + (scan.status === 'late' ? 'text-late' : 'text-ontime')
                       }
                     >
-                      {scan.status === 'late' ? 'Tarde · ' : ''}
+                      {scan.status === 'late' ? 'tarde · ' : ''}
                       {hora(scan.scannedAt)}
                     </div>
                   </button>
@@ -156,45 +145,45 @@ export default function TeacherPanel() {
         </section>
 
         {/* Middle Panel: Justifications */}
-        <section className="w-96 bg-white rounded-3xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0">
-          <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <FileText size={20} className="text-blue-500" />
+        <section className="w-96 flex flex-col overflow-hidden border-r border-rule shrink-0">
+          <div className="px-8 pt-6 pb-4">
+            <h2 className="font-serif text-lg text-ink flex items-center gap-2">
+              <FileText size={18} className="text-brass" />
               Justificativos
             </h2>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto px-8 pb-8">
             {pending.length === 0 && resolved.length === 0 ? (
-              <div className="text-center text-gray-400 mt-10">No hay justificativos todavía.</div>
+              <div className="text-ink-soft border-t border-rule pt-6">No hay justificativos todavía.</div>
             ) : (
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-5">
                 {pending.map((justification) => (
-                  <div key={justification.id} className="border border-gray-200 rounded-2xl p-4 shadow-sm">
-                    <h3 className="font-bold text-gray-900">
-                      {justification.studentName} ({justification.course})
+                  <div key={justification.id} className="border-t border-rule pt-4">
+                    <h3 className="font-semibold text-ink">
+                      {justification.studentName} <span className="text-ink-soft font-normal">({justification.course})</span>
                     </h3>
-                    <p className="text-xs text-blue-600 font-semibold mt-0.5">
+                    <p className="text-xs text-brass font-semibold mt-0.5">
                       Falta del {fechaLarga(justification.fecha)}
                     </p>
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">{justification.reason}</p>
+                    <p className="text-sm text-ink-soft mt-1.5 line-clamp-2">{justification.reason}</p>
 
-                    <div className="mt-4 flex gap-2">
+                    <div className="mt-3 flex gap-4 text-sm font-medium">
                       <button
                         onClick={() => setSelectedJustification(justification)}
-                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
+                        className="text-ink-soft hover:text-ink transition-colors cursor-pointer"
                       >
                         Ver motivo
                       </button>
                       <button
                         onClick={() => handleRespond(justification.id, 'denied')}
-                        className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
+                        className="text-danger hover:opacity-70 transition-opacity cursor-pointer"
                       >
                         Denegar
                       </button>
                       <button
                         onClick={() => handleRespond(justification.id, 'approved')}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
+                        className="text-ontime hover:opacity-70 transition-opacity cursor-pointer"
                       >
                         Aprobar
                       </button>
@@ -204,19 +193,19 @@ export default function TeacherPanel() {
 
                 {resolved.map((justification) =>
                   justification.status === 'approved' ? (
-                    <div key={justification.id} className="bg-green-50 border border-green-200 rounded-2xl p-4 flex gap-3 items-start">
-                      <CheckCircle2 size={20} className="text-green-600 shrink-0 mt-0.5" />
+                    <div key={justification.id} className="border-t border-rule pt-4 flex gap-3 items-start">
+                      <CheckCircle2 size={17} className="text-ontime shrink-0 mt-0.5" />
                       <div>
-                        <h3 className="font-bold text-green-800">Inasistencia Justificada</h3>
-                        <p className="text-sm text-green-700 mt-1">{justification.studentName} ({justification.course})</p>
+                        <h3 className="font-semibold text-ink text-sm">Inasistencia justificada</h3>
+                        <p className="text-sm text-ink-soft mt-0.5">{justification.studentName} ({justification.course})</p>
                       </div>
                     </div>
                   ) : (
-                    <div key={justification.id} className="bg-red-50 border border-red-200 rounded-2xl p-4 flex gap-3 items-start">
-                      <XCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
+                    <div key={justification.id} className="border-t border-rule pt-4 flex gap-3 items-start">
+                      <XCircle size={17} className="text-danger shrink-0 mt-0.5" />
                       <div>
-                        <h3 className="font-bold text-red-800">Justificativo Denegado</h3>
-                        <p className="text-sm text-red-700 mt-1">{justification.studentName} ({justification.course})</p>
+                        <h3 className="font-semibold text-ink text-sm">Justificativo denegado</h3>
+                        <p className="text-sm text-ink-soft mt-0.5">{justification.studentName} ({justification.course})</p>
                       </div>
                     </div>
                   )
@@ -227,30 +216,27 @@ export default function TeacherPanel() {
         </section>
 
         {/* Right Panel: Enrolled students -> per-student history */}
-        <section className="w-72 bg-white rounded-3xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0">
-          <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <Users size={20} className="text-blue-500" />
+        <section className="w-72 flex flex-col overflow-hidden shrink-0">
+          <div className="px-8 pt-6 pb-4">
+            <h2 className="font-serif text-lg text-ink flex items-center gap-2">
+              <Users size={18} className="text-brass" />
               Alumnos
             </h2>
-            <p className="text-sm text-gray-400 mt-1">{students.length} registrados</p>
+            <p className="text-sm text-ink-soft mt-1">{students.length} registrados</p>
           </div>
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto px-8 pb-8">
             {students.length === 0 ? (
-              <div className="text-center text-gray-400 mt-10 px-2">Todavía no hay alumnos registrados en la app.</div>
+              <div className="text-ink-soft border-t border-rule pt-6">Todavía no hay alumnos registrados en la app.</div>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="border-t border-rule">
                 {students.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => setHistoryStudent({ id: s.id, name: s.fullName })}
-                    className="text-left p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer flex items-center justify-between"
+                    className="w-full text-left py-3 border-b border-rule hover:bg-brass-soft/40 transition-colors cursor-pointer px-1"
                   >
-                    <div>
-                      <p className="font-semibold text-gray-800 text-sm">{s.fullName}</p>
-                      <p className="text-xs text-gray-400">{s.course}</p>
-                    </div>
-                    <Clock size={16} className="text-gray-300" />
+                    <p className="font-semibold text-ink text-sm">{s.fullName}</p>
+                    <p className="text-xs text-ink-soft mt-0.5">{s.course}</p>
                   </button>
                 ))}
               </div>
@@ -261,40 +247,40 @@ export default function TeacherPanel() {
 
       {/* Modal: Justification Detail */}
       {selectedJustification && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-xl font-bold">Detalle del Justificativo</h3>
-              <button onClick={() => setSelectedJustification(null)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
-                <XCircle size={24} />
+        <div className="fixed inset-0 bg-ink/50 z-50 flex items-center justify-center p-6">
+          <div className="bg-paper-raised w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] border-t-2 border-brass">
+            <div className="px-7 pt-6 pb-5 flex justify-between items-start">
+              <h3 className="font-serif text-xl text-ink">Detalle del justificativo</h3>
+              <button onClick={() => setSelectedJustification(null)} className="text-ink-soft hover:text-ink cursor-pointer">
+                <XCircle size={22} />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto flex-1">
-              <div className="mb-6">
-                <label className="text-sm font-bold text-gray-500 uppercase">Alumno</label>
-                <p className="text-lg font-semibold">
+            <div className="px-7 overflow-y-auto flex-1 border-t border-rule pt-5">
+              <div className="mb-5">
+                <label className="text-xs font-semibold text-ink-soft">Alumno</label>
+                <p className="text-ink font-semibold mt-0.5">
                   {selectedJustification.studentName} ({selectedJustification.course})
                 </p>
               </div>
-              <div className="mb-6">
-                <label className="text-sm font-bold text-gray-500 uppercase">Día que justifica</label>
-                <p className="text-lg font-semibold">{fechaLarga(selectedJustification.fecha)}</p>
+              <div className="mb-5">
+                <label className="text-xs font-semibold text-ink-soft">Día que justifica</label>
+                <p className="text-ink font-semibold mt-0.5">{fechaLarga(selectedJustification.fecha)}</p>
               </div>
               <div>
-                <label className="text-sm font-bold text-gray-500 uppercase">Motivo</label>
-                <p className="text-gray-800 p-4 bg-gray-50 rounded-xl mt-1 border border-gray-100">{selectedJustification.reason}</p>
+                <label className="text-xs font-semibold text-ink-soft">Motivo</label>
+                <p className="text-ink mt-1.5 leading-relaxed">{selectedJustification.reason}</p>
               </div>
             </div>
 
             {selectedJustification.status === 'pending' && (
-              <div className="p-6 border-t border-gray-100 flex gap-4 bg-gray-50">
+              <div className="px-7 py-5 border-t border-rule flex gap-3 mt-5">
                 <button
                   onClick={() => {
                     handleRespond(selectedJustification.id, 'denied');
                     setSelectedJustification(null);
                   }}
-                  className="flex-1 py-3 rounded-xl font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 font-semibold text-danger border border-danger/30 hover:bg-danger-soft transition-colors cursor-pointer"
                 >
                   Denegar
                 </button>
@@ -303,9 +289,9 @@ export default function TeacherPanel() {
                     handleRespond(selectedJustification.id, 'approved');
                     setSelectedJustification(null);
                   }}
-                  className="flex-1 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 font-semibold text-paper bg-ontime hover:opacity-90 transition-opacity cursor-pointer"
                 >
-                  Aprobar Falta
+                  Aprobar falta
                 </button>
               </div>
             )}
@@ -315,37 +301,34 @@ export default function TeacherPanel() {
 
       {/* Modal: Student History */}
       {historyStudent && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+        <div className="fixed inset-0 bg-ink/50 z-50 flex items-center justify-center p-6">
+          <div className="bg-paper-raised w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] border-t-2 border-brass">
+            <div className="px-7 pt-6 pb-5 flex justify-between items-start">
               <div>
-                <h3 className="text-xl font-bold">{historyStudent.name}</h3>
-                <p className="text-sm text-gray-400">Historial de asistencia</p>
+                <h3 className="font-serif text-xl text-ink">{historyStudent.name}</h3>
+                <p className="text-sm text-ink-soft mt-0.5">Historial de asistencia</p>
               </div>
-              <button onClick={() => setHistoryStudent(null)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
-                <XCircle size={24} />
+              <button onClick={() => setHistoryStudent(null)} className="text-ink-soft hover:text-ink cursor-pointer">
+                <XCircle size={22} />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto flex-1">
+            <div className="px-7 overflow-y-auto flex-1 border-t border-rule">
               {historyRecords.length === 0 ? (
-                <p className="text-center text-gray-400 mt-6">Todavía no tiene ninguna llegada registrada.</p>
+                <p className="text-ink-soft mt-6">Todavía no tiene ninguna llegada registrada.</p>
               ) : (
-                <div className="flex flex-col gap-2">
+                <div>
                   {historyRecords.map((r) => (
-                    <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
+                    <div key={r.id} className="flex items-center justify-between py-3 border-b border-rule">
                       <div>
-                        <p className="text-sm font-semibold text-gray-800">{fechaLarga(r.fecha)}</p>
-                        <p className="text-xs text-gray-400">
-                          {r.course} · {r.status === 'late' ? 'Llegó tarde' : 'Puntual'}
-                        </p>
+                        <p className="text-sm font-semibold text-ink">{fechaLarga(r.fecha)}</p>
+                        <p className="text-xs text-ink-soft mt-0.5">{r.course}</p>
                       </div>
                       <span
                         className={
-                          r.status === 'late'
-                            ? 'bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-xs font-bold border border-amber-200'
-                            : 'bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200'
+                          'font-mono text-sm font-medium ' + (r.status === 'late' ? 'text-late' : 'text-ontime')
                         }
                       >
+                        {r.status === 'late' ? 'tarde · ' : ''}
                         {hora(r.scannedAt)}
                       </span>
                     </div>
@@ -353,6 +336,7 @@ export default function TeacherPanel() {
                 </div>
               )}
             </div>
+            <div className="h-6 shrink-0" />
           </div>
         </div>
       )}

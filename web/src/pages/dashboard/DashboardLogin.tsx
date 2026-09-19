@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { School } from 'lucide-react';
 import { signIn, signOut, getMyProfile, translateAuthError } from '../../services/auth';
 import { supabase } from '../../services/realtime';
 
@@ -43,50 +42,49 @@ export default function DashboardLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md border border-gray-100">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-200">
-            <School size={36} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 text-center">C.N.S.I.L.</h1>
-          <p className="text-gray-500 mt-1">Panel de Profesores</p>
-          <p className="text-gray-400 text-xs mt-1">Usá la misma cuenta que en la app</p>
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="w-full max-w-sm">
+        <div className="border-t-2 border-brass pt-7 text-center">
+          <p className="font-mono text-[11px] tracking-[0.2em] text-ink-soft">COLEGIO NACIONAL</p>
+          <h1 className="font-serif text-3xl text-ink mt-1 leading-tight">San Ignacio de Loyola</h1>
+          <p className="text-ink-soft text-sm mt-2">Registro de asistencia · panel de profesores</p>
         </div>
 
-        <form onSubmit={handleLogin} className="flex flex-col gap-5">
+        <form onSubmit={handleLogin} className="flex flex-col gap-5 mt-10 border-t border-rule pt-8">
           <div>
-            <label className="text-sm font-semibold text-gray-700 ml-1 block mb-1">Correo Institucional</label>
+            <label className="text-xs font-semibold text-ink-soft block mb-1.5">Correo institucional</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+              className="w-full px-0 py-2 border-b border-rule focus:outline-none focus:border-brass bg-transparent text-ink transition-colors"
               required
             />
           </div>
           <div>
-            <label className="text-sm font-semibold text-gray-700 ml-1 block mb-1">Contraseña</label>
+            <label className="text-xs font-semibold text-ink-soft block mb-1.5">Contraseña</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+              className="w-full px-0 py-2 border-b border-rule focus:outline-none focus:border-brass bg-transparent text-ink transition-colors"
               required
             />
           </div>
 
-          {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+          {error && <p className="text-danger text-sm">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold py-3.5 rounded-xl shadow-md transition-all mt-4 active:scale-95 cursor-pointer"
+            className="w-full bg-ink hover:bg-[#0E1728] disabled:opacity-50 text-paper font-semibold py-3 mt-3 transition-colors cursor-pointer"
           >
-            {loading ? 'Ingresando...' : 'Acceder al Panel'}
+            {loading ? 'Ingresando…' : 'Ingresar'}
           </button>
         </form>
+
+        <p className="text-ink-soft/70 text-xs text-center mt-6">Usá la misma cuenta que en la app del celular.</p>
       </div>
     </div>
   );

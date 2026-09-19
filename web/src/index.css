@@ -1,18 +1,36 @@
 @import "tailwindcss";
 
+/*
+  Identidad "libro de asistencia": tinta sobre papel, reglas finas en vez
+  de sombras y tarjetas redondeadas. El serif es para títulos con peso
+  institucional; todo lo que un profesor tiene que leer rápido (listas,
+  botones, formularios) usa el sans. Las horas usan mono para que las
+  columnas de dígitos alineen, como en una planilla real.
+*/
 @theme {
-  --color-primary: #2563EB;
-  --color-primary-dark: #1E40AF;
-  --color-topbar: #0F294A;
-  --color-success: #10B981;
-  --color-error: #EF4444;
-  --color-bg-light: #F3F4F6;
-  --color-bg-white: #FFFFFF;
+  --color-ink: #16233D;
+  --color-ink-soft: #4B5768;
+  --color-paper: #FAF9F6;
+  --color-paper-raised: #FFFFFF;
+  --color-rule: #DAD5C8;
+  --color-rule-strong: #BFB9A9;
+  --color-brass: #9C6B2E;
+  --color-brass-soft: #F3EADA;
+  --color-ontime: #3A6B52;
+  --color-ontime-soft: #E8F0EA;
+  --color-late: #9C6B2E;
+  --color-late-soft: #F3EADA;
+  --color-danger: #9B3B3B;
+  --color-danger-soft: #F5E6E4;
+
+  --font-serif: "Source Serif 4", Georgia, serif;
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--color-bg-light);
-  color: #333333;
+  font-family: var(--font-sans);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
 }
