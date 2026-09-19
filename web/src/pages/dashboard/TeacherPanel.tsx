@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, FileText, CheckCircle2, XCircle, Settings, Users, Smartphone } from 'lucide-react';
+import { LogOut, FileText, CheckCircle2, XCircle, Settings, BookOpen, Smartphone } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAttendance, todayISO } from '../../hooks/useAttendance';
 import { useJustifications } from '../../hooks/useJustifications';
 import { useStudents } from '../../hooks/useStudents';
+import { useConfig } from '../../hooks/useConfig';
 import { signOut } from '../../services/auth';
 import SettingsModal from '../../components/SettingsModal';
+import ClassesPanel from '../../components/ClassesPanel';
 import { avatarColorFor, initialsFor } from '../../theme';
 import type { Justification } from '../../types';
 
@@ -38,9 +40,10 @@ function Avatar({ nombre, size = 40 }: { nombre: string; size?: number }) {
 export default function TeacherPanel() {
   const navigate = useNavigate();
   const { loading, profile, email } = useAuth();
-  const { records, clearAll: clearAttendance } = useAttendance();
+  const { records, clearAll: clearAttendance, scan, setArrivalTime } = useAttendance();
   const { items: justifications, respond, clearAll: clearJustifications } = useJustifications();
   const students = useStudents();
+  const { config } = useConfig();
 
   const [selectedJustification, setSelectedJustification] = useState<Justification | null>(null);
   const [historyStudent, setHistoryStudent] = useState<{ id: string; name: string } | null>(null);
@@ -234,37 +237,19 @@ export default function TeacherPanel() {
           </div>
         </section>
 
-        {/* Right Panel: Enrolled students -> per-student history */}
-        <section className="w-72 bg-card rounded-2xl border border-border flex flex-col overflow-hidden shrink-0">
+        {/* Right Panel: Classes -> per-course roster, same as the app */}
+        <section className="w-80 bg-card rounded-2xl border border-border flex flex-col overflow-hidden shrink-0">
           <div className="p-6 border-b border-border flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-primary-light flex items-center justify-center shrink-0">
-              <Users size={18} className="text-primary" />
+              <BookOpen size={18} className="text-primary" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-title">Alumnos</h2>
-              <p className="text-xs text-muted mt-0.5">{students.length} registrados</p>
+              <h2 className="text-base font-bold text-title">Clases</h2>
+              <p className="text-xs text-muted mt-0.5">{students.length} alumnos registrados</p>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
-            {students.length === 0 ? (
-              <div className="text-muted text-sm text-center mt-6 px-2">Todavía no hay alumnos registrados en la app.</div>
-            ) : (
-              <div className="flex flex-col gap-1">
-                {students.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => setHistoryStudent({ id: s.id, name: s.fullName })}
-                    className="text-left p-2.5 rounded-xl hover:bg-primary-light/50 transition-colors cursor-pointer flex items-center gap-3"
-                  >
-                    <Avatar nombre={s.fullName} size={34} />
-                    <div className="min-w-0">
-                      <p className="font-semibold text-title text-sm truncate">{s.fullName}</p>
-                      <p className="text-xs text-muted">{s.course}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+            <ClassesPanel students={students} records={records} config={config} onScan={scan} onSetArrivalTime={setArrivalTime} />
           </div>
         </section>
       </main>

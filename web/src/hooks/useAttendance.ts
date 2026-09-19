@@ -71,6 +71,12 @@ export function useAttendance() {
         const record = fromRow(payload.new as Row);
         setRecords((prev) => (prev.some((r) => r.id === record.id) ? prev : [record, ...prev]));
       })
+      // El profesor puede corregir una llegada desde Clases: sin esto, otra
+      // sesión abierta se quedaba con el dato viejo.
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'asistencias' }, (payload) => {
+        const record = fromRow(payload.new as Row);
+        setRecords((prev) => prev.map((r) => (r.id === record.id ? record : r)));
+      })
       // Si se limpian los datos desde la app, el panel abierto tiene que
       // enterarse en vez de seguir mostrando filas que ya no existen.
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'asistencias' }, (payload) => {
@@ -92,5 +98,45 @@ export function useAttendance() {
     setRecords([]);
   };
 
-  return { records, clearAll };
+  // Hace llegar a un alumno AHORA MISMO (hora real del servidor, no se
+  // puede falsear). Mismo comportamiento que "Simular Escaneo NFC" en la app.
+  const scan = async (
+    input: { studentId: string; studentName: string; course: string }
+  ): Promise<
+    | { ok: true; record: AttendanceRecord }
+    | { ok: false; reason: 'duplicado'; studentName: string }
+    | { ok: false; reason: 'error'; message: string }
+  > => {
+    const { data, error } = await supabase
+      .from('asistencias')
+      .insert({ student_id: input.studentId, student_name: input.studentName, course: input.course })
+      .select()
+      .single();
+    if (error) {
+      if (error.code === '23505') return { ok: false, reason: 'duplicado', studentName: input.studentName };
+      return { ok: false, reason: 'error', message: error.message };
+    }
+    const record = fromRow(data as Row);
+    setRecords((prev) => [record, ...prev]);
+    return { ok: true, record };
+  };
+
+  // Corrección manual: ajusta la hora real de una llegada ya registrada. El
+  // status (puntual/tarde) lo recalcula la base a partir de esa hora, nunca
+  // se manda por separado. No se puede mover a otro día ni a hora futura
+  // (la base lo rechaza).
+  const setArrivalTime = async (id: string, scannedAtISO: string): Promise<AttendanceRecord> => {
+    const { data, error } = await supabase
+      .from('asistencias')
+      .update({ scanned_at: scannedAtISO })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    const record = fromRow(data as Row);
+    setRecords((prev) => prev.map((r) => (r.id === record.id ? record : r)));
+    return record;
+  };
+
+  return { records, clearAll, scan, setArrivalTime };
 }
