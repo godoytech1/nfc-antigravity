@@ -138,5 +138,13 @@ export function useAttendance() {
     return record;
   };
 
-  return { records, clearAll, scan, setArrivalTime };
+  // Saca el registro entero: si era de hoy, el alumno vuelve a "pendiente";
+  // si era de un día pasado, vuelve a figurar como "ausente" ese día.
+  const removeArrival = async (id: string): Promise<void> => {
+    const { error } = await supabase.from('asistencias').delete().eq('id', id);
+    if (error) throw error;
+    setRecords((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  return { records, clearAll, scan, setArrivalTime, removeArrival };
 }

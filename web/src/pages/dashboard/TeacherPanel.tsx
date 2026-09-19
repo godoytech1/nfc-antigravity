@@ -40,7 +40,7 @@ function Avatar({ nombre, size = 40 }: { nombre: string; size?: number }) {
 export default function TeacherPanel() {
   const navigate = useNavigate();
   const { loading, profile, email } = useAuth();
-  const { records, clearAll: clearAttendance, scan, setArrivalTime } = useAttendance();
+  const { records, clearAll: clearAttendance, scan, setArrivalTime, removeArrival } = useAttendance();
   const { items: justifications, respond, clearAll: clearJustifications } = useJustifications();
   const students = useStudents();
   const { config } = useConfig();
@@ -249,7 +249,14 @@ export default function TeacherPanel() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
-            <ClassesPanel students={students} records={records} config={config} onScan={scan} onSetArrivalTime={setArrivalTime} />
+            <ClassesPanel
+              students={students}
+              records={records}
+              config={config}
+              onScan={scan}
+              onSetArrivalTime={setArrivalTime}
+              onRemoveArrival={removeArrival}
+            />
           </div>
         </section>
       </main>

@@ -17,6 +17,7 @@ type Props = {
   config: Configuracion;
   onScan: (input: { studentId: string; studentName: string; course: string }) => Promise<ScanResult>;
   onSetArrivalTime: (id: string, scannedAtISO: string) => Promise<AttendanceRecord>;
+  onRemoveArrival: (id: string) => Promise<void>;
 };
 
 const DIAS_CORTOS = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
@@ -78,7 +79,7 @@ function ProgressRing({ percent, size = 44 }: { percent: number; size?: number }
 // Panel "Clases" del profesor: cursos con % de hoy, y al entrar a uno, el
 // mismo roster que la app -- tocar un alumno pendiente lo hace llegar,
 // tocar uno que ya llegó abre su ficha para corregir la hora.
-export default function ClassesPanel({ students, records, config, onScan, onSetArrivalTime }: Props) {
+export default function ClassesPanel({ students, records, config, onScan, onSetArrivalTime, onRemoveArrival }: Props) {
   const [cursoActivo, setCursoActivo] = useState<string | null>(null);
   const hoy = todayISO();
 
@@ -118,6 +119,7 @@ export default function ClassesPanel({ students, records, config, onScan, onSetA
           config={config}
           onScan={onScan}
           onSetArrivalTime={onSetArrivalTime}
+          onRemoveArrival={onRemoveArrival}
           onClose={() => setCursoActivo(null)}
         />
       )}
@@ -132,6 +134,7 @@ function CourseRosterModal({
   config,
   onScan,
   onSetArrivalTime,
+  onRemoveArrival,
   onClose,
 }: {
   course: string;
@@ -140,6 +143,7 @@ function CourseRosterModal({
   config: Configuracion;
   onScan: Props['onScan'];
   onSetArrivalTime: Props['onSetArrivalTime'];
+  onRemoveArrival: Props['onRemoveArrival'];
   onClose: () => void;
 }) {
   const hoy = todayISO();
@@ -283,6 +287,7 @@ function CourseRosterModal({
           registro={detalle.registro}
           config={config}
           onSetArrivalTime={onSetArrivalTime}
+          onRemoveArrival={onRemoveArrival}
           onClose={() => setDetalle(null)}
         />
       )}
@@ -315,20 +320,24 @@ function ArrivalDetailModal({
   registro,
   config,
   onSetArrivalTime,
+  onRemoveArrival,
   onClose,
 }: {
   student: EnrolledStudent;
   registro: AttendanceRecord;
   config: Configuracion;
   onSetArrivalTime: Props['onSetArrivalTime'];
+  onRemoveArrival: Props['onRemoveArrival'];
   onClose: () => void;
 }) {
   const horaOriginal = horaHHMM(registro.scannedAt);
   const [horaElegida, setHoraElegida] = useState(horaOriginal);
   const [guardando, setGuardando] = useState(false);
+  const [quitando, setQuitando] = useState(false);
 
   const estadoPredicho = prediceEstado(horaElegida, config);
   const cambioAlgo = horaElegida !== horaOriginal;
+  const esHoy = registro.fecha === todayISO();
 
   const handleGuardar = async () => {
     setGuardando(true);
@@ -340,6 +349,22 @@ function ArrivalDetailModal({
       alert(e?.message ?? 'No se pudo guardar.');
     } finally {
       setGuardando(false);
+    }
+  };
+
+  const handleQuitar = async () => {
+    const mensaje = esHoy
+      ? `${student.fullName} va a volver a figurar como pendiente hoy. ¿Confirmás?`
+      : `${student.fullName} va a volver a figurar como ausente ese día. ¿Confirmás?`;
+    if (!confirm(mensaje)) return;
+    setQuitando(true);
+    try {
+      await onRemoveArrival(registro.id);
+      onClose();
+    } catch (e: any) {
+      alert(e?.message ?? 'No se pudo quitar el registro.');
+    } finally {
+      setQuitando(false);
     }
   };
 
@@ -382,6 +407,14 @@ function ArrivalDetailModal({
             className="w-full mt-5 bg-primary hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors cursor-pointer"
           >
             {guardando ? 'Guardando...' : 'Guardar'}
+          </button>
+
+          <button
+            onClick={handleQuitar}
+            disabled={quitando}
+            className="w-full mt-2 text-danger hover:bg-danger-bg disabled:opacity-50 font-semibold py-2.5 rounded-xl transition-colors cursor-pointer text-sm"
+          >
+            {quitando ? 'Quitando...' : esHoy ? 'Marcar como pendiente' : 'Quitar registro'}
           </button>
         </div>
       </div>
