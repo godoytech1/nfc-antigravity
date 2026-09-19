@@ -29,3 +29,13 @@ body {
   background-color: var(--color-bg);
   color: var(--color-body);
 }
+
+/* Selector de días (pills que se deslizan horizontal): el navegador le
+   dibujaba encima su propia barra de scroll con flechas, tapando el pill. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

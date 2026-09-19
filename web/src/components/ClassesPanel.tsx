@@ -192,7 +192,7 @@ function CourseRosterModal({
           </button>
         </div>
 
-        <div className="flex gap-2 px-6 py-3 border-b border-border overflow-x-auto">
+        <div className="flex gap-2 px-6 py-3 border-b border-border overflow-x-auto no-scrollbar">
           {dias.map((dia) => (
             <button
               key={dia}
