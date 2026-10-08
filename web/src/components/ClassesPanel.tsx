@@ -4,7 +4,8 @@ import { COURSES } from '../roster';
 import { avatarColorFor, initialsFor } from '../theme';
 import { todayISO } from '../hooks/useAttendance';
 import type { Configuracion } from '../hooks/useConfig';
-import type { AttendanceRecord, EnrolledStudent } from '../types';
+import { TURNOS, TURNO_LABEL, turnoActual, turnoDeHora } from '../turnos';
+import type { AttendanceRecord, EnrolledStudent, Turno } from '../types';
 
 type ScanResult =
   | { ok: true; record: AttendanceRecord }
@@ -77,13 +78,15 @@ function ProgressRing({ percent, size = 44 }: { percent: number; size?: number }
 export default function ClassesPanel({ students, records, config, onScan, onSetArrivalTime, onRemoveArrival }: Props) {
   const [cursoActivo, setCursoActivo] = useState<string | null>(null);
   const hoy = todayISO();
+  // Doble turno: el anillo muestra el turno en que estamos (mañana o tarde).
+  const turno = turnoActual(config);
 
   return (
     <>
       <div className="flex flex-col gap-2">
         {COURSES.map((course) => {
           const roster = students.filter((s) => s.course === course);
-          const delHoy = records.filter((r) => r.fecha === hoy && r.course === course);
+          const delHoy = records.filter((r) => r.fecha === hoy && r.turno === turno && r.course === course);
           const presentes = roster.filter((s) => delHoy.some((r) => r.studentId === s.id)).length;
           const percent = roster.length === 0 ? 0 : Math.round((presentes / roster.length) * 100);
 
@@ -97,7 +100,7 @@ export default function ClassesPanel({ students, records, config, onScan, onSetA
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-title">{course}</p>
                 <p className="text-sm text-muted">
-                  Asistencia de hoy · {presentes}/{roster.length}
+                  Hoy · turno {TURNO_LABEL[turno].toLowerCase()} · {presentes}/{roster.length}
                 </p>
               </div>
               <ChevronRight size={18} className="text-muted shrink-0" />
@@ -148,11 +151,18 @@ function CourseRosterModal({
   }, [records, hoy]);
 
   const [diaActivo, setDiaActivo] = useState(hoy);
+  const turnoHoy = turnoActual(config);
+  const [turno, setTurno] = useState<Turno>(turnoHoy);
   const [procesando, setProcesando] = useState<string | null>(null);
   const [detalle, setDetalle] = useState<{ student: EnrolledStudent; registro: AttendanceRecord } | null>(null);
   const esHoy = diaActivo === hoy;
+  // Solo se puede marcar "llegó ahora" en el turno en curso (la hora real decide el turno).
+  const esTurnoActual = esHoy && turno === turnoHoy;
+  const turnoPorVenir = esHoy && turno === 'tarde' && turnoHoy === 'manana';
+  // Día anterior en el que nadie de este curso llegó en este turno: no hubo clase.
+  const sinClase = !esHoy && !records.some((r) => r.fecha === diaActivo && r.turno === turno);
 
-  const delDia = records.filter((r) => r.fecha === diaActivo);
+  const delDia = records.filter((r) => r.fecha === diaActivo && r.turno === turno);
   const presentes = students.filter((s) => delDia.some((r) => r.studentId === s.id)).length;
   const tarde = delDia.filter((r) => r.status === 'late').length;
 
@@ -187,6 +197,21 @@ function CourseRosterModal({
           </button>
         </div>
 
+        <div className="flex gap-1 p-1 mx-6 mt-3 rounded-xl bg-bg">
+          {TURNOS.map((t) => (
+            <button
+              key={t}
+              onClick={() => setTurno(t)}
+              className={
+                'flex-1 py-1.5 rounded-lg text-sm font-semibold cursor-pointer transition-colors ' +
+                (turno === t ? 'bg-card text-primary shadow-sm' : 'text-muted hover:text-title')
+              }
+            >
+              {TURNO_LABEL[t]}
+            </button>
+          ))}
+        </div>
+
         <div className="flex gap-2 px-6 py-3 border-b border-border overflow-x-auto no-scrollbar">
           {dias.map((dia) => (
             <button
@@ -209,12 +234,14 @@ function CourseRosterModal({
             <div className="flex flex-col gap-2">
               {students.map((student) => {
                 const registro = delDia.find((r) => r.studentId === student.id);
-                const pendiente = !registro && esHoy;
-                const tocable = (esHoy && !registro) || !!registro;
+                const pendiente = !registro && (esTurnoActual || turnoPorVenir);
+                const tocable = (esTurnoActual && !registro) || !!registro;
                 const cargando = procesando === student.id;
 
                 const badge = pendiente
                   ? { texto: 'Pendiente', className: 'bg-border text-muted', icon: <Minus size={13} /> }
+                  : !registro && sinClase
+                  ? { texto: 'Sin clase', className: 'bg-border text-muted', icon: <Minus size={13} /> }
                   : !registro
                   ? { texto: 'Ausente', className: 'bg-danger-bg text-danger', icon: null }
                   : registro.status === 'late'
@@ -292,7 +319,8 @@ function CourseRosterModal({
 
 function prediceEstado(horaHHMM: string, config: Configuracion): 'ontime' | 'late' {
   const [h, m] = horaHHMM.split(':').map(Number);
-  const [ch, cm] = config.horaEntrada.split(':').map(Number);
+  const turno = turnoDeHora(horaHHMM, config);
+  const [ch, cm] = (turno === 'tarde' ? config.horaEntradaTarde : config.horaEntrada).split(':').map(Number);
   const limite = ch * 60 + cm + config.toleranciaMinutos;
   return h * 60 + m <= limite ? 'ontime' : 'late';
 }

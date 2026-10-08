@@ -2,12 +2,16 @@ export type Role = 'profesor' | 'alumno';
 
 export type AttendanceStatus = 'ontime' | 'late' | 'absent';
 
+// Doble turno: los mismos alumnos entran a la mañana y a la tarde.
+export type Turno = 'manana' | 'tarde';
+
 export interface AttendanceRecord {
   id: string;
   studentId: string | null;
   studentName: string;
   course: string;
   status: AttendanceStatus;
+  turno: Turno; // lo decide la base por la hora real de la llegada
   fecha: string; // YYYY-MM-DD, día de clase según la zona horaria del colegio
   scannedAt: string; // ISO
 }

@@ -1,26 +1,29 @@
 import { useCallback, useEffect, useId, useState } from 'react';
 import { supabase } from '../services/realtime';
+import type { Turno } from '../types';
 
 export type Configuracion = {
-  horaEntrada: string; // "07:00"
+  horaEntrada: string; // "07:00", turno mañana
+  horaEntradaTarde: string; // "13:00", turno tarde
   toleranciaMinutos: number;
 };
 
 type Row = {
   id: number;
   hora_entrada: string;
+  hora_entrada_tarde?: string | null;
   tolerancia_minutos: number;
 };
 
-const POR_DEFECTO: Configuracion = { horaEntrada: '07:00', toleranciaMinutos: 15 };
+const POR_DEFECTO: Configuracion = { horaEntrada: '07:00', horaEntradaTarde: '13:00', toleranciaMinutos: 15 };
 
 function hhmm(hora: string) {
   return hora.slice(0, 5); // "07:00:00" -> "07:00"
 }
 
-// Hora a partir de la cual una llegada cuenta como tarde.
-export function limiteDeTardanza(config: Configuracion) {
-  const [h, m] = config.horaEntrada.split(':').map(Number);
+// Hora a partir de la cual una llegada cuenta como tarde en ese turno.
+export function limiteDeTardanza(config: Configuracion, turno: Turno = 'manana') {
+  const [h, m] = (turno === 'tarde' ? config.horaEntradaTarde : config.horaEntrada).split(':').map(Number);
   const total = h * 60 + m + config.toleranciaMinutos;
   const hh = String(Math.floor(total / 60) % 24).padStart(2, '0');
   const mm = String(total % 60).padStart(2, '0');
@@ -40,7 +43,11 @@ export function useConfig() {
     const { data, error } = await supabase.from('configuracion').select('*').eq('id', 1).single();
     if (error || !data) return;
     const row = data as Row;
-    setConfig({ horaEntrada: hhmm(row.hora_entrada), toleranciaMinutos: row.tolerancia_minutos });
+    setConfig({
+      horaEntrada: hhmm(row.hora_entrada),
+      horaEntradaTarde: hhmm(row.hora_entrada_tarde ?? POR_DEFECTO.horaEntradaTarde),
+      toleranciaMinutos: row.tolerancia_minutos,
+    });
   }, []);
 
   useEffect(() => {
@@ -64,7 +71,11 @@ export function useConfig() {
   const update = useCallback(async (next: Configuracion) => {
     const { error } = await supabase
       .from('configuracion')
-      .update({ hora_entrada: next.horaEntrada, tolerancia_minutos: next.toleranciaMinutos })
+      .update({
+        hora_entrada: next.horaEntrada,
+        hora_entrada_tarde: next.horaEntradaTarde,
+        tolerancia_minutos: next.toleranciaMinutos,
+      })
       .eq('id', 1);
     if (error) throw error;
     setConfig(next);

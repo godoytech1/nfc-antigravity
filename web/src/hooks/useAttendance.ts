@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../services/realtime';
 import { useAutoRefetch } from './useAutoRefetch';
-import type { AttendanceRecord, AttendanceStatus } from '../types';
+import type { AttendanceRecord, AttendanceStatus, Turno } from '../types';
 
 type Row = {
   id: string;
@@ -9,6 +9,7 @@ type Row = {
   student_name: string;
   course: string;
   status: AttendanceStatus;
+  turno?: Turno | null;
   fecha: string;
   scanned_at: string;
 };
@@ -20,6 +21,7 @@ function fromRow(r: Row): AttendanceRecord {
     studentName: r.student_name,
     course: r.course,
     status: r.status,
+    turno: r.turno === 'tarde' ? 'tarde' : 'manana',
     fecha: r.fecha,
     scannedAt: r.scanned_at,
   };

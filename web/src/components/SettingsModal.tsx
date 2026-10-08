@@ -16,6 +16,7 @@ export default function SettingsModal({ open, onClose, nombre, email, onLogout, 
   const { config, update } = useConfig();
 
   const [hora, setHora] = useState(config.horaEntrada);
+  const [horaTarde, setHoraTarde] = useState(config.horaEntradaTarde);
   const [tolerancia, setTolerancia] = useState(String(config.toleranciaMinutos));
   const [horarioMsg, setHorarioMsg] = useState<string | null>(null);
   const [guardandoHorario, setGuardandoHorario] = useState(false);
@@ -43,14 +44,16 @@ export default function SettingsModal({ open, onClose, nombre, email, onLogout, 
   // "Horario guardado" desaparecería en el mismo instante en que se guarda.
   useEffect(() => {
     setHora(config.horaEntrada);
+    setHoraTarde(config.horaEntradaTarde);
     setTolerancia(String(config.toleranciaMinutos));
   }, [config]);
 
   if (!open) return null;
 
   const guardarHorario = async () => {
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(hora)) {
-      setHorarioMsg('La hora tiene que estar en formato HH:MM (por ejemplo 07:00).');
+    const formato = /^([01]\d|2[0-3]):[0-5]\d$/;
+    if (!formato.test(hora) || !formato.test(horaTarde)) {
+      setHorarioMsg('Las horas tienen que estar en formato HH:MM (por ejemplo 07:00 y 13:00).');
       return;
     }
     const minutos = Number(tolerancia);
@@ -58,10 +61,17 @@ export default function SettingsModal({ open, onClose, nombre, email, onLogout, 
       setHorarioMsg('La tolerancia tiene que ser un número de 0 a 120 minutos.');
       return;
     }
+    // Mismo cálculo que la base: la tarde empieza una hora antes de su entrada, y la mañana
+    // (entrada + tolerancia) tiene que terminar antes de ese corte.
+    const min = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+    if (min(horaTarde) - 60 <= min(hora) + minutos) {
+      setHorarioMsg('La entrada de la tarde tiene que ser bastante después de la de la mañana.');
+      return;
+    }
     setGuardandoHorario(true);
     setHorarioMsg(null);
     try {
-      await update({ horaEntrada: hora, toleranciaMinutos: minutos });
+      await update({ horaEntrada: hora, horaEntradaTarde: horaTarde, toleranciaMinutos: minutos });
       setHorarioMsg('Horario guardado.');
     } catch (e: any) {
       setHorarioMsg(e?.message ?? 'No se pudo guardar el horario.');
@@ -138,13 +148,23 @@ export default function SettingsModal({ open, onClose, nombre, email, onLogout, 
               Horario de entrada
             </h4>
             <p className="text-sm text-muted mb-4">
-              Las llegadas después de las <strong className="text-title">{limiteDeTardanza(config)}</strong> quedan
-              marcadas como tarde.
+              En el turno mañana, las llegadas después de las{' '}
+              <strong className="text-title">{limiteDeTardanza(config, 'manana')}</strong> quedan marcadas como tarde; en el
+              turno tarde, después de las <strong className="text-title">{limiteDeTardanza(config, 'tarde')}</strong>.
             </p>
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className={label}>Hora de entrada</label>
+                <label className={label}>Entrada mañana</label>
                 <input className={input} value={hora} onChange={(e) => setHora(e.target.value)} placeholder="07:00" />
+              </div>
+              <div className="flex-1">
+                <label className={label}>Entrada tarde</label>
+                <input
+                  className={input}
+                  value={horaTarde}
+                  onChange={(e) => setHoraTarde(e.target.value)}
+                  placeholder="13:00"
+                />
               </div>
               <div className="flex-1">
                 <label className={label}>Tolerancia (min)</label>

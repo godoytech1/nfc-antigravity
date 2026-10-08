@@ -11,6 +11,7 @@ import AttachmentList from '../../components/AttachmentList';
 import SettingsModal from '../../components/SettingsModal';
 import ClassesPanel from '../../components/ClassesPanel';
 import { avatarColorFor, initialsFor } from '../../theme';
+import { TURNO_LABEL } from '../../turnos';
 import type { Justification } from '../../types';
 
 // "2026-09-13" -> "sáb, 13 sept." sin corrimiento de zona horaria
@@ -149,7 +150,9 @@ export default function TeacherPanel() {
                     <Avatar nombre={scan.studentName} />
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-title truncate">{scan.studentName}</p>
-                      <p className="text-sm text-muted">{scan.course}</p>
+                      <p className="text-sm text-muted">
+                        {scan.course} · turno {TURNO_LABEL[scan.turno].toLowerCase()}
+                      </p>
                     </div>
                     <span
                       className={
@@ -356,7 +359,9 @@ export default function TeacherPanel() {
                     <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-bg">
                       <div>
                         <p className="text-sm font-semibold text-title">{fechaLarga(r.fecha)}</p>
-                        <p className="text-xs text-muted">{r.course}</p>
+                        <p className="text-xs text-muted">
+                          {r.course} · turno {TURNO_LABEL[r.turno].toLowerCase()}
+                        </p>
                       </div>
                       <span
                         className={
