@@ -12,6 +12,14 @@ export interface AttendanceRecord {
   scannedAt: string; // ISO
 }
 
+// Archivo adjunto a un justificativo (guardado en el bucket privado "justificativos").
+export interface Attachment {
+  path: string;
+  name: string;
+  type: string;
+  size: number;
+}
+
 export interface Justification {
   id: string;
   userId: string | null;
@@ -21,6 +29,7 @@ export interface Justification {
   fecha: string; // YYYY-MM-DD: el día que se está justificando
   status: 'pending' | 'approved' | 'denied';
   createdAt: string; // ISO
+  attachments: Attachment[];
 }
 
 export interface EnrolledStudent {

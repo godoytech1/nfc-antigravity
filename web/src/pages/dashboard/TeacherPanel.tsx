@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, FileText, CheckCircle2, XCircle, Settings, BookOpen, Smartphone } from 'lucide-react';
+import { LogOut, FileText, CheckCircle2, XCircle, Settings, BookOpen, Smartphone, Paperclip } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAttendance, todayISO } from '../../hooks/useAttendance';
 import { useJustifications } from '../../hooks/useJustifications';
 import { useStudents } from '../../hooks/useStudents';
 import { useConfig } from '../../hooks/useConfig';
 import { signOut } from '../../services/auth';
+import AttachmentList from '../../components/AttachmentList';
 import SettingsModal from '../../components/SettingsModal';
 import ClassesPanel from '../../components/ClassesPanel';
 import { avatarColorFor, initialsFor } from '../../theme';
@@ -189,6 +190,13 @@ export default function TeacherPanel() {
                       Falta del {fechaLarga(justification.fecha)}
                     </p>
                     <p className="text-sm text-body mt-1.5 line-clamp-2">{justification.reason}</p>
+                    {justification.attachments.length > 0 && (
+                      <p className="text-xs text-primary font-semibold mt-1.5 flex items-center gap-1">
+                        <Paperclip size={12} />
+                        {justification.attachments.length}{' '}
+                        {justification.attachments.length === 1 ? 'adjunto' : 'adjuntos'}
+                      </p>
+                    )}
 
                     <div className="mt-3 flex gap-2">
                       <button
@@ -290,6 +298,11 @@ export default function TeacherPanel() {
                 <label className="text-xs font-bold text-label uppercase tracking-wide">Motivo</label>
                 <p className="text-body p-4 bg-bg rounded-xl mt-1.5 leading-relaxed">{selectedJustification.reason}</p>
               </div>
+              {selectedJustification.attachments.length > 0 && (
+                <div className="mt-5">
+                  <AttachmentList attachments={selectedJustification.attachments} />
+                </div>
+              )}
             </div>
 
             {selectedJustification.status === 'pending' && (

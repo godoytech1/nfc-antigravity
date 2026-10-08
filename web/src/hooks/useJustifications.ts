@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../services/realtime';
-import type { Justification } from '../types';
+import type { Attachment, Justification } from '../types';
 
 type Row = {
   id: string;
@@ -11,6 +11,7 @@ type Row = {
   fecha: string;
   status: 'pending' | 'approved' | 'denied';
   created_at: string;
+  attachments: Attachment[] | null;
 };
 
 function fromRow(r: Row): Justification {
@@ -23,6 +24,7 @@ function fromRow(r: Row): Justification {
     fecha: r.fecha,
     status: r.status,
     createdAt: r.created_at,
+    attachments: Array.isArray(r.attachments) ? r.attachments : [],
   };
 }
 
@@ -84,8 +86,11 @@ export function useJustifications() {
   };
 
   const clearAll = async () => {
+    const archivos = items.flatMap((j) => j.attachments.map((a) => a.path));
     const { error } = await supabase.from('justificativos').delete().not('id', 'is', null);
     if (error) throw error;
+    // Los adjuntos viven en el storage: se borran aparte (si falla, solo quedan archivos huérfanos).
+    if (archivos.length > 0) await supabase.storage.from('justificativos').remove(archivos);
     setItems([]);
   };
 
