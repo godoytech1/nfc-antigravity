@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ExternalLink, FileText } from 'lucide-react';
+import { ExternalLink, FileText, Maximize2, X } from 'lucide-react';
 import { supabase } from '../services/realtime';
 import type { Attachment } from '../types';
 
@@ -12,6 +12,20 @@ function tamano(bytes: number) {
 // El bucket "justificativos" es privado: se piden enlaces temporales (1 hora) al abrir.
 export default function AttachmentList({ attachments }: { attachments: Attachment[] }) {
   const [urls, setUrls] = useState<Record<string, string> | null>(null);
+  const [vista, setVista] = useState<{ url: string; name: string } | null>(null);
+
+  // Esc cierra la vista previa (sin cerrar también el detalle que está debajo).
+  useEffect(() => {
+    if (!vista) return;
+    const alTeclear = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setVista(null);
+      }
+    };
+    window.addEventListener('keydown', alTeclear, true);
+    return () => window.removeEventListener('keydown', alTeclear, true);
+  }, [vista]);
 
   useEffect(() => {
     let vivo = true;
@@ -59,9 +73,28 @@ export default function AttachmentList({ attachments }: { attachments: Attachmen
                     <p className="text-sm font-semibold text-title truncate">{a.name}</p>
                     <p className="text-xs text-muted">{url ? tamano(a.size) : 'No se pudo cargar'}</p>
                   </div>
-                  {url ? <ExternalLink size={16} className="text-muted shrink-0" /> : null}
+                  {url ? (
+                    esImagen ? (
+                      <Maximize2 size={16} className="text-muted shrink-0" />
+                    ) : (
+                      <ExternalLink size={16} className="text-muted shrink-0" />
+                    )
+                  ) : null}
                 </>
               );
+              // Las fotos se ven en una vista previa dentro del panel; los PDF/Word se abren en otra pestaña.
+              if (url && esImagen) {
+                return (
+                  <button
+                    key={a.path}
+                    type="button"
+                    onClick={() => setVista({ url, name: a.name })}
+                    className="flex items-center gap-3 p-2 rounded-xl bg-bg hover:bg-border transition-colors text-left cursor-pointer"
+                  >
+                    {contenido}
+                  </button>
+                );
+              }
               return url ? (
                 <a
                   key={a.path}
@@ -80,6 +113,35 @@ export default function AttachmentList({ attachments }: { attachments: Attachmen
             })
           : null}
       </div>
+
+      {vista && (
+        <div
+          className="fixed inset-0 bg-title/60 z-[60] flex items-center justify-center p-6"
+          onClick={() => setVista(null)}
+        >
+          <div
+            className="bg-card rounded-2xl p-3 w-full max-w-xl shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-2 pb-2.5 gap-3">
+              <p className="text-sm font-semibold text-title truncate">{vista.name}</p>
+              <button
+                type="button"
+                onClick={() => setVista(null)}
+                className="text-muted hover:text-title cursor-pointer shrink-0"
+                aria-label="Cerrar vista previa"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <img
+              src={vista.url}
+              alt={vista.name}
+              className="w-full max-h-[65vh] object-contain rounded-xl bg-bg"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
