@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../services/realtime';
+import { useAutoRefetch } from './useAutoRefetch';
 import type { AttendanceRecord, AttendanceStatus } from '../types';
 
 type Row = {
@@ -49,21 +50,24 @@ function desdeISO(dias: number) {
 export function useAttendance() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
 
-  useEffect(() => {
-    let mounted = true;
-
-    supabase
+  const cargar = useCallback(async () => {
+    const { data, error } = await supabase
       .from('asistencias')
       .select('*')
       .gte('fecha', desdeISO(DIAS_DE_HISTORIAL))
-      .order('scanned_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          console.warn('No se pudo leer asistencias:', error.message);
-          return;
-        }
-        if (mounted && data) setRecords((data as Row[]).map(fromRow));
-      });
+      .order('scanned_at', { ascending: false });
+    if (error) {
+      console.warn('No se pudo leer asistencias:', error.message);
+      return;
+    }
+    if (data) setRecords((data as Row[]).map(fromRow));
+  }, []);
+
+  useAutoRefetch(cargar);
+
+  useEffect(() => {
+    let yaConectado = false;
+    cargar();
 
     const channel = supabase
       .channel('web-asistencias-db')
@@ -84,13 +88,17 @@ export function useAttendance() {
         if (!borrado) return;
         setRecords((prev) => prev.filter((r) => r.id !== borrado));
       })
-      .subscribe();
+      .subscribe((estado) => {
+        if (estado === 'SUBSCRIBED') {
+          if (yaConectado) cargar();
+          yaConectado = true;
+        }
+      });
 
     return () => {
-      mounted = false;
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [cargar]);
 
   const clearAll = async () => {
     const { error } = await supabase.from('asistencias').delete().not('id', 'is', null);

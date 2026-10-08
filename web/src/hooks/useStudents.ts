@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../services/realtime';
+import { useAutoRefetch } from './useAutoRefetch';
 import type { EnrolledStudent } from '../types';
 
 type ProfileRow = {
@@ -20,30 +21,35 @@ function fromRows(rows: ProfileRow[]): EnrolledStudent[] {
 export function useStudents() {
   const [students, setStudents] = useState<EnrolledStudent[]>([]);
 
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.from('profiles').select('*');
+    if (error) {
+      console.warn('No se pudo leer alumnos registrados:', error.message);
+      return;
+    }
+    if (data) setStudents(fromRows(data as ProfileRow[]));
+  }, []);
+
+  useAutoRefetch(load);
+
   useEffect(() => {
-    let mounted = true;
-
-    const load = async () => {
-      const { data, error } = await supabase.from('profiles').select('*');
-      if (error) {
-        console.warn('No se pudo leer alumnos registrados:', error.message);
-        return;
-      }
-      if (mounted && data) setStudents(fromRows(data as ProfileRow[]));
-    };
-
+    let yaConectado = false;
     load();
 
     const channel = supabase
       .channel('web-profiles-db')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, load)
-      .subscribe();
+      .subscribe((estado) => {
+        if (estado === 'SUBSCRIBED') {
+          if (yaConectado) load();
+          yaConectado = true;
+        }
+      });
 
     return () => {
-      mounted = false;
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [load]);
 
   return students;
 }

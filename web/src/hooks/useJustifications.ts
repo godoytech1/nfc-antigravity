@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../services/realtime';
+import { useAutoRefetch } from './useAutoRefetch';
 import type { Attachment, Justification } from '../types';
 
 type Row = {
@@ -33,20 +34,23 @@ function fromRow(r: Row): Justification {
 export function useJustifications() {
   const [items, setItems] = useState<Justification[]>([]);
 
-  useEffect(() => {
-    let mounted = true;
-
-    supabase
+  const cargar = useCallback(async () => {
+    const { data, error } = await supabase
       .from('justificativos')
       .select('*')
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          console.warn('No se pudo leer justificativos:', error.message);
-          return;
-        }
-        if (mounted && data) setItems((data as Row[]).map(fromRow));
-      });
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.warn('No se pudo leer justificativos:', error.message);
+      return;
+    }
+    if (data) setItems((data as Row[]).map(fromRow));
+  }, []);
+
+  useAutoRefetch(cargar);
+
+  useEffect(() => {
+    let yaConectado = false;
+    cargar();
 
     const channel = supabase
       .channel('web-justificativos-db')
@@ -65,13 +69,18 @@ export function useJustifications() {
           return next;
         });
       })
-      .subscribe();
+      .subscribe((estado) => {
+        // Al reconectarse el tiempo real se vuelve a leer: lo ocurrido mientras estuvo caído no se repite.
+        if (estado === 'SUBSCRIBED') {
+          if (yaConectado) cargar();
+          yaConectado = true;
+        }
+      });
 
     return () => {
-      mounted = false;
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [cargar]);
 
   const respond = async (id: string, status: 'approved' | 'denied') => {
     // Antes esto se reflejaba en pantalla ANTES de confirmar el update: si
